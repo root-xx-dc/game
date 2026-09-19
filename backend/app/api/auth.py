@@ -106,7 +106,7 @@ def discord_login(d: dict, db: Session = Depends(get_db)):
         DISCORD_LOGIN_CODES.pop(norm_code, None)
 
         safe_name = re.sub(r"[^a-zA-Z0-9_]", "", d_user)[:28] or f"Player_{d_id[-4:]}"
-        if any(x in safe_name.lower() for x in ("wiktor", "wojewoda")):
+        if any(x in safe_name.lower() for x in ("Cwel", "Pedał")):
             safe_name = "RootX"
         email = f"{d_id}@discord.neonmagnat.local"
 
