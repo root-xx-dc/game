@@ -7,7 +7,8 @@ def seed(db: Session):
     for item, base in ITEMS.items():
         db.add(MarketItem(item_id=item, price=float(base), supply=1000, demand=1000))
     for c in CITIES:
-        db.add(City(**c))
+        db.add(City(name=c["name"], population=c["population"], demand=c["demand"],
+                    wages=c["wages"], taxes=c["taxes"], land=c["land"]))
     for code, title, desc in ACHIEVEMENTS:
         db.add(Achievement(code=code, title=title, description=desc))
     db.commit()
