@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+game.db
+*.db
+pgdata/
+node_modules/
+config.yaml
+.DS_Store

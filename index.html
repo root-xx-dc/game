@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="dark-oak">
+<head>
+<meta charset="UTF-8">
+<title>NEON MAGNAT | Status</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="icon" type="image/svg+xml" href="frontend/assets/logo.svg">
+<style>
+:root[data-theme="dark-oak"] {
+  --bg: #14110f;
+  --panel: #1f1914;
+  --card: #272019;
+  --line: #42362b;
+  --txt: #f5efe6;
+  --mut: #a69888;
+  --acc: #d49547;
+  --acc-hover: #e5a85b;
+  --grn: #5cb85c;
+  --red: #d9534f;
+  --badge-bg: #33271d;
+}
+:root[data-theme="starry-night"] {
+  --bg: #090c16;
+  --panel: #111728;
+  --card: #182038;
+  --line: #263354;
+  --txt: #eef2fc;
+  --mut: #8896b8;
+  --acc: #8ea5d4;
+  --acc-hover: #a6bde8;
+  --grn: #4ecdc4;
+  --red: #f25f5c;
+  --badge-bg: #1e2946;
+}
+:root[data-theme="industrial-slate"] {
+  --bg: #111417;
+  --panel: #1a1e24;
+  --card: #232832;
+  --line: #353d4c;
+  --txt: #e8ecf1;
+  --mut: #8b95a5;
+  --acc: #d97736;
+  --acc-hover: #ea8a4b;
+  --grn: #3eb489;
+  --red: #e74c3c;
+  --badge-bg: #2b3240;
+}
+:root[data-theme="forest-emerald"] {
+  --bg: #0a120e;
+  --panel: #121f19;
+  --card: #1a2a22;
+  --line: #294236;
+  --txt: #edf7f2;
+  --mut: #86a394;
+  --acc: #3eb885;
+  --acc-hover: #50cc97;
+  --grn: #4caf50;
+  --red: #e57373;
+  --badge-bg: #21362c;
+}
+:root[data-theme="obsidian"] {
+  --bg: #0d0d0d;
+  --panel: #171717;
+  --card: #222222;
+  --line: #383838;
+  --txt: #f0f0f0;
+  --mut: #909090;
+  --acc: #dedede;
+  --acc-hover: #ffffff;
+  --grn: #66bb6a;
+  --red: #ef5350;
+  --badge-bg: #2b2b2b;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  padding: 20px 14px 40px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.wrap {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.top-brand {
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.top-brand span { color: var(--acc); }
+.top-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+select, button {
+  background: var(--card);
+  color: var(--txt);
+  border: 1px solid var(--line);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+select:focus, button:focus {
+  outline: none;
+  border-color: var(--acc);
+}
+.btn-primary {
+  background: var(--acc);
+  color: #121212;
+  font-weight: 700;
+  border: none;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  transition: opacity 0.15s;
+}
+.btn-primary:hover { opacity: 0.9; }
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--badge-bg);
+  border: 1px solid var(--line);
+}
+.badge.offline { color: var(--red); }
+.badge.online { color: var(--grn); }
+.notice {
+  background: var(--badge-bg);
+  border-left: 4px solid var(--acc);
+  padding: 10px 14px;
+  border-radius: 4px;
+  margin: 10px 0 16px;
+  font-size: 14px;
+}
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.contact-item {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.contact-title {
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.contact-desc {
+  font-size: 12px;
+  color: var(--mut);
+}
+.contact-link {
+  color: var(--acc);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 13px;
+  word-break: break-all;
+}
+.contact-link:hover { text-decoration: underline; }
+code {
+  background: var(--card);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  border: 1px solid var(--line);
+  color: var(--acc);
+}
+
+/* Mini Gameplay Showcase */
+.game-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.stat-box {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+.stat-label {
+  font-size: 11px;
+  color: var(--mut);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.stat-val {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.game-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+.action-box {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+.action-box h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.row-btn {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  margin-top: 6px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--acc);
+  width: 0%;
+  transition: width 0.1s linear;
+}
+.game-log {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 12px;
+  max-height: 110px;
+  overflow-y: auto;
+  font-size: 12px;
+  font-family: monospace;
+  color: var(--mut);
+  margin-top: 12px;
+}
+.game-log div { margin-bottom: 3px; }
+.game-log div:first-child { color: var(--txt); font-weight: 600; }
+.svg-ic {
+  width: 16px;
+  height: 16px;
+  vertical-align: -2px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  display: inline-block;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Top Bar: Brand, Theme Switcher, Language Switcher -->
+  <div class="top-bar">
+    <div class="top-brand">
+      <svg class="svg-ic" style="width:20px;height:20px" viewBox="0 0 24 24"><path d="M2 21h20M4 21V9l5 3.5V9l5 3.5V5h6v16"/></svg>
+      <span>NEON</span> MAGNAT
+      <small style="color:var(--mut);font-weight:400;margin-left:4px" id="lblSubTitle">Ekonomia i Przemysł</small>
+    </div>
+    <div class="top-controls">
+      <label for="themeSelect" style="font-size:12px;color:var(--mut)" id="lblTheme">Motyw:</label>
+      <select id="themeSelect" onchange="changeTheme(this.value)">
+        <option value="dark-oak">Ciemny dąb</option>
+        <option value="starry-night">Gwiezdna noc</option>
+        <option value="industrial-slate">Grafit przemysłowy</option>
+        <option value="forest-emerald">Leśny mech</option>
+        <option value="obsidian">Obsydian</option>
+      </select>
+
+      <label for="langSelect" style="font-size:12px;color:var(--mut)" id="lblLang">Język:</label>
+      <select id="langSelect" onchange="changeLang(this.value)">
+        <option value="pl">Polski (PL)</option>
+        <option value="en">English (EN)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Server Status & Where to Go -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title" id="srvTitle">
+        <svg class="svg-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="txtStatusTitle">Status serwera gry</span>
+      </h2>
+      <span class="badge offline" id="srvBadge">
+        <svg class="svg-ic" viewBox="0 0 24 24" style="width:12px;height:12px"><circle cx="12" cy="12" r="5" fill="currentColor"/></svg>
+        <span id="txtStatusState">Sprawdzanie...</span>
+      </span>
+    </div>
+
+    <div class="notice" id="srvNotice">
+      <span id="txtNotice">Wczytywanie informacji konfiguracyjnych...</span>
+    </div>
+
+    <!-- Contact & Where to write channels -->
+    <h3 style="font-size:15px;margin:16px 0 10px" id="hdrContact">Gdzie się udać / Gdzie napisać</h3>
+    <div class="grid-2" id="contactContainer">
+      <!-- Injected dynamically from config.yaml -->
+    </div>
+
+    <!-- Server restart help -->
+    <div style="margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px">
+      <h4 style="margin:0 0 8px;font-size:13px;color:var(--txt)" id="hdrInstructions">Uruchomienie serwera lokalnie:</h4>
+      <div style="font-size:13px;display:flex;flex-direction:column;gap:4px">
+        <div>Linux / VPS: <code id="cmdLinux">./start.sh</code></div>
+        <div>Windows: <code id="cmdWin">start.bat</code></div>
+        <div>Docker: <code id="cmdDocker">docker compose up -d</code></div>
+        <div style="color:var(--mut);font-size:12px;margin-top:4px" id="txtVpsHint"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="btn-primary" onclick="retryServer()">
+        <svg class="svg-ic" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span id="btnRetry">Sprawdź połączenie</span>
+      </button>
+      <a class="btn-primary" href="./frontend/index.html" style="background:var(--card);color:var(--txt);border:1px solid var(--line)">
+        <svg class="svg-ic" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span id="btnOpenDemo">Uruchom tryb demo bez serwera</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Interactive Gameplay Preview -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">
+        <svg class="svg-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
+        <span id="hdrMiniGame">Przykład rozgrywki (Mini-symulator offline)</span>
+      </h2>
+      <span class="badge" style="color:var(--acc)" id="lblOfflinePlayable">Grywalny podgląd</span>
+    </div>
+    <p style="font-size:13px;color:var(--mut);margin-top:0" id="descMiniGame">
+      Sprawdź podstawowe mechaniki handlu i produkcji w NEON MAGNAT, nawet gdy serwer jest wyłączony!
+    </p>
+
+    <!-- Stats -->
+    <div class="game-stats">
+      <div class="stat-box">
+        <div class="stat-label" id="lblCash">Gotówka</div>
+        <div class="stat-val" style="color:var(--acc)" id="valCash">$500</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label" id="lblIron">Ruda żelaza</div>
+        <div class="stat-val" id="valIron">0 szt.</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label" id="lblCoal">Węgiel</div>
+        <div class="stat-val" id="valCoal">0 szt.</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label" id="lblSteel">Stal</div>
+        <div class="stat-val" id="valSteel">0 szt.</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label" id="lblTools">Narzędzia</div>
+        <div class="stat-val" id="valTools">0 szt.</div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="game-actions">
+      <!-- Buy raw materials -->
+      <div class="action-box">
+        <h4 id="hdrBuyMaterials">
+          <svg class="svg-ic" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/></svg>
+          Giełda surowców
+        </h4>
+        <div class="row-btn">
+          <button class="btn-sm" onclick="gameBuy('iron')">Kup żelazo ($<span id="priceIron">15</span>)</button>
+          <button class="btn-sm" onclick="gameBuy('coal')">Kup węgiel ($<span id="priceCoal">10</span>)</button>
+        </div>
+        <small style="color:var(--mut);font-size:11px" id="hintBuy">Surowce są niezbędne do rozpoczęcia wytapiania stali.</small>
+      </div>
+
+      <!-- Manufacture -->
+      <div class="action-box">
+        <h4 id="hdrManufacture">
+          <svg class="svg-ic" viewBox="0 0 24 24"><path d="M2 21h20M4 21V9l5 3.5V9l5 3.5V5h6v16"/></svg>
+          Linia produkcyjna
+        </h4>
+        <div class="row-btn">
+          <button class="btn-sm btn-primary" id="btnProduceSteel" onclick="gameProduce('steel')">Wytop stal (2 żelaza + 1 węgiel)</button>
+          <button class="btn-sm btn-primary" id="btnProduceTools" onclick="gameProduce('tools')">Zrób narzędzia (1 stal + 1 węgiel)</button>
+        </div>
+        <div id="prodStatus" style="font-size:12px;color:var(--acc)">Gotowy do produkcji</div>
+        <div class="progress-bar"><div class="progress-fill" id="prodBar"></div></div>
+      </div>
+
+      <!-- Sell on market -->
+      <div class="action-box">
+        <h4 id="hdrSellGoods">
+          <svg class="svg-ic" viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l4-5 3 3 5-7"/></svg>
+          Sprzedaż gotowych produktów
+        </h4>
+        <div class="row-btn">
+          <button class="btn-sm" onclick="gameSell('steel')">Sprzedaj stal ($<span id="priceSteel">48</span>)</button>
+          <button class="btn-sm" onclick="gameSell('tools')">Sprzedaj narzędzia ($<span id="priceTools">115</span>)</button>
+        </div>
+        <small style="color:var(--mut);font-size:11px" id="hintSell">Ceny na rynku zmieniają się dynamicznie co 4 sekundy.</small>
+      </div>
+
+      <!-- Workshop upgrades -->
+      <div class="action-box">
+        <h4 id="hdrUpgrades">
+          <svg class="svg-ic" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Innowacje warsztatu
+        </h4>
+        <div class="row-btn">
+          <button class="btn-sm" id="btnUpFurnace" onclick="gameUpgrade('furnace')">Szybszy piec ($200)</button>
+          <button class="btn-sm" id="btnUpCrane" onclick="gameUpgrade('crane')">Logistyka +15% ($350)</button>
+        </div>
+        <small style="color:var(--mut);font-size:11px" id="lblActiveUpgrades">Brak aktywnych ulepszeń</small>
+      </div>
+    </div>
+
+    <!-- History log -->
+    <div class="game-log" id="gameLog">
+      <div>[System] Witaj w mini-przykładzie rozgrywki NEON MAGNAT! Kup żelazo i węgiel, aby rozpocząć produkcję.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================
+   Obsługa Języków (PL / EN) i Motywów
+   ========================================================== */
+var currentLang = localStorage.getItem("tycoon_lang") || "pl";
+var currentTheme = localStorage.getItem("tycoon_theme") || "dark-oak";
+
+document.documentElement.setAttribute("data-theme", currentTheme);
+document.getElementById("themeSelect").value = currentTheme;
+document.getElementById("langSelect").value = currentLang;
+
+var I18N = {
+  pl: {
+    subTitle: "Ekonomia i Przemysł",
+    theme: "Motyw:",
+    lang: "Język:",
+    srvStatusTitle: "Status serwera gry",
+    srvChecking: "Sprawdzanie...",
+    srvOnline: "ONLINE",
+    srvOffline: "OFFLINE",
+    hdrContact: "Gdzie się udać / Gdzie napisać",
+    hdrInstructions: "Uruchomienie serwera lokalnie:",
+    btnRetry: "Sprawdź połączenie",
+    btnOpenDemo: "Uruchom tryb demo bez serwera",
+    hdrMiniGame: "Przykład rozgrywki (Mini-symulator offline)",
+    lblOfflinePlayable: "Grywalny podgląd",
+    descMiniGame: "Sprawdź podstawowe mechaniki handlu i produkcji w NEON MAGNAT, nawet gdy serwer jest wyłączony!",
+    lblCash: "Gotówka",
+    lblIron: "Ruda żelaza",
+    lblCoal: "Węgiel",
+    lblSteel: "Stal",
+    lblTools: "Narzędzia",
+    hdrBuyMaterials: "Giełda surowców",
+    btnBuyIron: "Kup żelazo",
+    btnBuyCoal: "Kup węgiel",
+    hintBuy: "Surowce są niezbędne do rozpoczęcia wytapiania stali.",
+    hdrManufacture: "Linia produkcyjna",
+    btnProduceSteel: "Wytop stal (2 żelaza + 1 węgiel)",
+    btnProduceTools: "Zrób narzędzia (1 stal + 1 węgiel)",
+    prodReady: "Gotowy do produkcji",
+    hdrSellGoods: "Sprzedaż gotowych produktów",
+    btnSellSteel: "Sprzedaj stal",
+    btnSellTools: "Sprzedaj narzędzia",
+    hintSell: "Ceny na rynku zmieniają się dynamicznie co 4 sekundy.",
+    hdrUpgrades: "Innowacje warsztatu",
+    btnUpFurnace: "Szybszy piec ($200)",
+    btnUpCrane: "Logistyka +15% ($350)",
+    upNone: "Brak aktywnych ulepszeń",
+    upFurnaceDone: "Aktywne: Szybki piec (-40% czasu)",
+    upCraneDone: "Aktywne: Logistyka (+15% do cen sprzedaży)",
+    logWelcome: "[System] Witaj w mini-przykładzie rozgrywki NEON MAGNAT! Kup żelazo i węgiel, aby rozpocząć produkcję."
+  },
+  en: {
+    subTitle: "Economy & Industry",
+    theme: "Theme:",
+    lang: "Language:",
+    srvStatusTitle: "Game Server Status",
+    srvChecking: "Checking...",
+    srvOnline: "ONLINE",
+    srvOffline: "OFFLINE",
+    hdrContact: "Where to go / Where to contact",
+    hdrInstructions: "Starting the server locally:",
+    btnRetry: "Check connection",
+    btnOpenDemo: "Launch offline demo without server",
+    hdrMiniGame: "Gameplay Preview (Offline Mini-Simulator)",
+    lblOfflinePlayable: "Playable Preview",
+    descMiniGame: "Experience core trading and manufacturing mechanics of NEON MAGNAT even when the server is down!",
+    lblCash: "Cash",
+    lblIron: "Iron Ore",
+    lblCoal: "Coal",
+    lblSteel: "Steel",
+    lblTools: "Tools",
+    hdrBuyMaterials: "Commodity Market",
+    btnBuyIron: "Buy Iron",
+    btnBuyCoal: "Buy Coal",
+    hintBuy: "Raw materials are required to smelt steel.",
+    hdrManufacture: "Production Line",
+    btnProduceSteel: "Smelt Steel (2 iron + 1 coal)",
+    btnProduceTools: "Craft Tools (1 steel + 1 coal)",
+    prodReady: "Ready to produce",
+    hdrSellGoods: "Sell Finished Goods",
+    btnSellSteel: "Sell Steel",
+    btnSellTools: "Sell Tools",
+    hintSell: "Market prices fluctuate dynamically every 4 seconds.",
+    hdrUpgrades: "Workshop Innovations",
+    btnUpFurnace: "Faster Furnace ($200)",
+    btnUpCrane: "Logistics +15% ($350)",
+    upNone: "No active upgrades",
+    upFurnaceDone: "Active: Fast Furnace (-40% craft time)",
+    upCraneDone: "Active: Logistics (+15% sell bonus)",
+    logWelcome: "[System] Welcome to the NEON MAGNAT mini-demo! Purchase iron and coal to start production."
+  }
+};
+
+function changeLang(l) {
+  currentLang = l;
+  localStorage.setItem("tycoon_lang", l);
+  applyTranslations();
+  renderConfigData();
+}
+
+function changeTheme(t) {
+  currentTheme = t;
+  localStorage.setItem("tycoon_theme", t);
+  document.documentElement.setAttribute("data-theme", t);
+}
+
+function applyTranslations() {
+  var t = I18N[currentLang] || I18N.pl;
+  document.getElementById("lblSubTitle").textContent = t.subTitle;
+  document.getElementById("lblTheme").textContent = t.theme;
+  document.getElementById("lblLang").textContent = t.lang;
+  document.getElementById("txtStatusTitle").textContent = t.srvStatusTitle;
+  document.getElementById("hdrContact").textContent = t.hdrContact;
+  document.getElementById("hdrInstructions").textContent = t.hdrInstructions;
+  document.getElementById("btnRetry").textContent = t.btnRetry;
+  document.getElementById("btnOpenDemo").textContent = t.btnOpenDemo;
+  document.getElementById("hdrMiniGame").textContent = t.hdrMiniGame;
+  document.getElementById("lblOfflinePlayable").textContent = t.lblOfflinePlayable;
+  document.getElementById("descMiniGame").textContent = t.descMiniGame;
+  document.getElementById("lblCash").textContent = t.lblCash;
+  document.getElementById("lblIron").textContent = t.lblIron;
+  document.getElementById("lblCoal").textContent = t.lblCoal;
+  document.getElementById("lblSteel").textContent = t.lblSteel;
+  document.getElementById("lblTools").textContent = t.lblTools;
+  document.getElementById("hdrBuyMaterials").innerHTML = '<svg class="svg-ic" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/></svg> ' + t.hdrBuyMaterials;
+  document.getElementById("hintBuy").textContent = t.hintBuy;
+  document.getElementById("hdrManufacture").innerHTML = '<svg class="svg-ic" viewBox="0 0 24 24"><path d="M2 21h20M4 21V9l5 3.5V9l5 3.5V5h6v16"/></svg> ' + t.hdrManufacture;
+  document.getElementById("btnProduceSteel").textContent = t.btnProduceSteel;
+  document.getElementById("btnProduceTools").textContent = t.btnProduceTools;
+  document.getElementById("hdrSellGoods").innerHTML = '<svg class="svg-ic" viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l4-5 3 3 5-7"/></svg> ' + t.hdrSellGoods;
+  document.getElementById("hintSell").textContent = t.hintSell;
+  document.getElementById("hdrUpgrades").innerHTML = '<svg class="svg-ic" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ' + t.hdrUpgrades;
+  document.getElementById("btnUpFurnace").textContent = t.btnUpFurnace;
+  document.getElementById("btnUpCrane").textContent = t.btnUpCrane;
+}
+
+/* ==========================================================
+   Wczytywanie i Parsowanie pliku config.yaml
+   ========================================================== */
+var parsedConfig = {
+  server: {
+    status_title_pl: "Serwer gry jest niedostępny",
+    status_title_en: "Game server is unavailable",
+    status_desc_pl: "Obecnie nie można nawiązać połączenia z serwerem gry. Trwają prace konserwacyjne lub serwer nie został uruchomiony.",
+    status_desc_en: "Currently unable to establish connection to the game server. Maintenance is in progress or the server is offline."
+  },
+  announcement: {
+    enabled: true,
+    message_pl: "Prace techniczne. Przepraszamy za utrudnienia, sprawdź nasz kanał Discord aby uzyskać najnowsze informacje.",
+    message_en: "Scheduled maintenance. Sorry for the inconvenience, check our Discord channel for the latest status."
+  },
+  support: {
+    discord: {
+      name: "Discord Społeczności",
+      url: "https://discord.gg/neon-magnat",
+      channel: "#pomoc-techniczna",
+      help_pl: "Zgłoś problem i sprawdź status serwera na Discordzie",
+      help_en: "Report issues and check server status on Discord"
+    },
+    email: {
+      name: "E-mail Pomocy Technicznej",
+      address: "support@neonmagnat.local",
+      help_pl: "Wiadomości i tickety do administracji",
+      help_en: "Direct inquiries and tickets to administration"
+    },
+    telegram: {
+      name: "Telegram Alert",
+      url: "https://t.me/neon_magnat_status",
+      help_pl: "Natychmiastowe powiadomienia o dostępności serwera",
+      help_en: "Instant notifications regarding server availability"
+    },
+    forum: {
+      name: "Centrum Pomocy & Forum",
+      url: "https://pomoc.neonmagnat.local",
+      help_pl: "Baza wiedzy, poradniki i dyskusje graczy",
+      help_en: "Knowledge base, guides and community discussions"
+    }
+  },
+  admin: {
+    contact: "Administrator dyżurny: @AdminDyżurny",
+    response_time_pl: "Typowy czas reakcji: do 30 minut",
+    response_time_en: "Typical response time: within 30 minutes"
+  },
+  instructions: {
+    local_start_linux: "./start.sh",
+    local_start_windows: "start.bat",
+    docker_start: "docker compose up -d",
+    vps_hint_pl: "Na serwerze VPS sprawdź logi: tail -50 backend.log lub uruchom ./start.sh w sesji tmux / systemctl status neon-magnat",
+    vps_hint_en: "On VPS check logs: tail -50 backend.log or run ./start.sh inside tmux / systemctl status neon-magnat"
+  }
+};
+
+function parseSimpleYaml(yamlText) {
+  var lines = yamlText.split(/\r?\n/);
+  var root = {};
+  var stack = [{ indent: -1, obj: root }];
+
+  for (var i = 0; i < lines.length; i++) {
+    var raw = lines[i];
+    if (!raw.trim() || raw.trim().startsWith("#")) continue;
+    var indent = raw.search(/\S/);
+    var line = raw.trim();
+    var colonIdx = line.indexOf(":");
+    if (colonIdx === -1) continue;
+
+    var key = line.slice(0, colonIdx).trim();
+    var val = line.slice(colonIdx + 1).trim();
+
+    while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
+      stack.pop();
+    }
+    var parent = stack[stack.length - 1].obj;
+
+    if (val === "" || val === ">" || val === "|") {
+      parent[key] = {};
+      stack.push({ indent: indent, obj: parent[key] });
+    } else {
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      } else if (val === "true") val = true;
+      else if (val === "false") val = false;
+      else if (!isNaN(Number(val))) val = Number(val);
+      parent[key] = val;
+    }
+  }
+  return root;
+}
+
+function loadConfig() {
+  fetch("config.yaml").then(function(res) {
+    if (!res.ok) throw new Error("Status " + res.status);
+    return res.text();
+  }).then(function(txt) {
+    try {
+      var parsed = parseSimpleYaml(txt);
+      if (parsed && (parsed.server || parsed.support)) {
+        parsedConfig = Object.assign({}, parsedConfig, parsed);
+      }
+    } catch(e) {}
+    renderConfigData();
+  }).catch(function() {
+    renderConfigData();
+  });
+}
+
+function renderConfigData() {
+  var isPl = currentLang === "pl";
+  var cfg = parsedConfig;
+
+  var desc = (isPl ? cfg.server.status_desc_pl : cfg.server.status_desc_en) || cfg.server.status_desc_pl;
+  var ann = (isPl ? cfg.announcement.message_pl : cfg.announcement.message_en) || cfg.announcement.message_pl;
+
+  document.getElementById("txtNotice").textContent = (cfg.announcement.enabled ? ann : desc);
+
+  if (cfg.instructions) {
+    if (cfg.instructions.local_start_linux) document.getElementById("cmdLinux").textContent = cfg.instructions.local_start_linux;
+    if (cfg.instructions.local_start_windows) document.getElementById("cmdWin").textContent = cfg.instructions.local_start_windows;
+    if (cfg.instructions.docker_start) document.getElementById("cmdDocker").textContent = cfg.instructions.docker_start;
+    var hint = isPl ? cfg.instructions.vps_hint_pl : cfg.instructions.vps_hint_en;
+    document.getElementById("txtVpsHint").textContent = hint || "";
+  }
+
+  // Render contacts
+  var cont = document.getElementById("contactContainer");
+  cont.innerHTML = "";
+
+  if (cfg.support) {
+    // Discord
+    if (cfg.support.discord) {
+      var d = cfg.support.discord;
+      var elD = document.createElement("div");
+      elD.className = "contact-item";
+      elD.innerHTML = '<div class="contact-title"><svg class="svg-ic" viewBox="0 0 24 24"><path d="M18 6h-2a4 4 0 0 0-4 4v10M6 6H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2M18 10a4 4 0 0 1 4 4v2a2 2 0 0 1-2 2h-2"/></svg> ' + escHtml(d.name) + ' <span class="badge">' + escHtml(d.channel || "#pomoc") + '</span></div>' +
+        '<div class="contact-desc">' + escHtml(isPl ? d.help_pl : d.help_en) + '</div>' +
+        '<a class="contact-link" href="' + escHtml(d.url) + '" target="_blank" rel="noopener">' + escHtml(d.url) + '</a>';
+      cont.appendChild(elD);
+    }
+    // E-mail
+    if (cfg.support.email) {
+      var em = cfg.support.email;
+      var elEm = document.createElement("div");
+      elEm.className = "contact-item";
+      elEm.innerHTML = '<div class="contact-title"><svg class="svg-ic" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zM22 6l-10 7L2 6"/></svg> ' + escHtml(em.name) + '</div>' +
+        '<div class="contact-desc">' + escHtml(isPl ? em.help_pl : em.help_en) + '</div>' +
+        '<a class="contact-link" href="mailto:' + escHtml(em.address) + '">' + escHtml(em.address) + '</a>';
+      cont.appendChild(elEm);
+    }
+    // Telegram
+    if (cfg.support.telegram) {
+      var tg = cfg.support.telegram;
+      var elTg = document.createElement("div");
+      elTg.className = "contact-item";
+      elTg.innerHTML = '<div class="contact-title"><svg class="svg-ic" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> ' + escHtml(tg.name) + '</div>' +
+        '<div class="contact-desc">' + escHtml(isPl ? tg.help_pl : tg.help_en) + '</div>' +
+        '<a class="contact-link" href="' + escHtml(tg.url) + '" target="_blank" rel="noopener">' + escHtml(tg.url) + '</a>';
+      cont.appendChild(elTg);
+    }
+    // Forum
+    if (cfg.support.forum) {
+      var f = cfg.support.forum;
+      var elF = document.createElement("div");
+      elF.className = "contact-item";
+      elF.innerHTML = '<div class="contact-title"><svg class="svg-ic" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1L3 20l1.2-4.3A8.5 8.5 0 1 1 21 11.5z"/></svg> ' + escHtml(f.name) + '</div>' +
+        '<div class="contact-desc">' + escHtml(isPl ? f.help_pl : f.help_en) + '</div>' +
+        '<a class="contact-link" href="' + escHtml(f.url) + '" target="_blank" rel="noopener">' + escHtml(f.url) + '</a>';
+      cont.appendChild(elF);
+    }
+  }
+
+  // Admin contact card
+  if (cfg.admin) {
+    var elAdm = document.createElement("div");
+    elAdm.className = "contact-item";
+    elAdm.style.borderColor = "var(--acc)";
+    elAdm.innerHTML = '<div class="contact-title" style="color:var(--acc)"><svg class="svg-ic" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/></svg> ' + escHtml(cfg.admin.contact) + '</div>' +
+      '<div class="contact-desc">' + escHtml(isPl ? cfg.admin.response_time_pl : cfg.admin.response_time_en) + '</div>';
+    cont.appendChild(elAdm);
+  }
+}
+
+function escHtml(str) {
+  return String(str || "").replace(/[&<>"']/g, function(m) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m];
+  });
+}
+
+/* ==========================================================
+   Sprawdzanie stanu serwera
+   ========================================================== */
+var baseApi = location.protocol === "file:" ? "http://localhost:8000" : location.origin;
+function retryServer() {
+  var b = document.getElementById("srvBadge");
+  var t = document.getElementById("txtStatusState");
+  t.textContent = I18N[currentLang].srvChecking;
+  b.className = "badge";
+
+  fetch(baseApi + "/api/health", { cache: "no-store" }).then(function(r) {
+    if (!r.ok) throw 0;
+    b.className = "badge online";
+    t.textContent = I18N[currentLang].srvOnline;
+    setTimeout(function() {
+      if (location.protocol === "file:") location.replace("./frontend/index.html");
+      else location.replace(baseApi + "/");
+    }, 400);
+  }).catch(function() {
+    b.className = "badge offline";
+    t.textContent = I18N[currentLang].srvOffline;
+  });
+}
+
+/* ==========================================================
+   Interaktywny Mini-Symulator (Grywalny Teaser Tycoona)
+   ========================================================== */
+var gameState = {
+  money: 500,
+  iron: 0,
+  coal: 0,
+  steel: 0,
+  tools: 0,
+  prices: {
+    iron: 15,
+    coal: 10,
+    steel: 48,
+    tools: 115
+  },
+  upgrades: {
+    furnace: false,
+    crane: false
+  },
+  producing: null,
+  prodProgress: 0
+};
+
+function updateGameUi() {
+  document.getElementById("valCash").textContent = "$" + Math.round(gameState.money);
+  document.getElementById("valIron").textContent = gameState.iron + " " + (currentLang === "pl" ? "szt." : "pcs");
+  document.getElementById("valCoal").textContent = gameState.coal + " " + (currentLang === "pl" ? "szt." : "pcs");
+  document.getElementById("valSteel").textContent = gameState.steel + " " + (currentLang === "pl" ? "szt." : "pcs");
+  document.getElementById("valTools").textContent = gameState.tools + " " + (currentLang === "pl" ? "szt." : "pcs");
+
+  document.getElementById("priceIron").textContent = gameState.prices.iron;
+  document.getElementById("priceCoal").textContent = gameState.prices.coal;
+  document.getElementById("priceSteel").textContent = gameState.prices.steel;
+  document.getElementById("priceTools").textContent = gameState.prices.tools;
+
+  var upTxt = [];
+  if (gameState.upgrades.furnace) upTxt.push(I18N[currentLang].upFurnaceDone);
+  if (gameState.upgrades.crane) upTxt.push(I18N[currentLang].upCraneDone);
+  document.getElementById("lblActiveUpgrades").textContent = upTxt.join(" | ") || I18N[currentLang].upNone;
+
+  if (gameState.upgrades.furnace) {
+    document.getElementById("btnUpFurnace").disabled = true;
+    document.getElementById("btnUpFurnace").textContent = (currentLang === "pl" ? "Piec [Kupiony]" : "Furnace [Owned]");
+  }
+  if (gameState.upgrades.crane) {
+    document.getElementById("btnUpCrane").disabled = true;
+    document.getElementById("btnUpCrane").textContent = (currentLang === "pl" ? "Dźwig [Kupiony]" : "Logistics [Owned]");
+  }
+}
+
+function logMsg(txt) {
+  var box = document.getElementById("gameLog");
+  var row = document.createElement("div");
+  var time = new Date().toTimeString().slice(0, 8);
+  row.textContent = "[" + time + "] " + txt;
+  box.insertBefore(row, box.firstChild);
+  if (box.children.length > 25) box.removeChild(box.lastChild);
+}
+
+function gameBuy(mat) {
+  var cost = gameState.prices[mat];
+  if (gameState.money < cost) {
+    logMsg(currentLang === "pl" ? "Za mało gotówki na zakup surowca!" : "Not enough cash to buy raw materials!");
+    return;
+  }
+  gameState.money -= cost;
+  gameState[mat]++;
+  logMsg((currentLang === "pl" ? "Kupiono 1x " : "Purchased 1x ") + mat + " (-$" + cost + ")");
+  updateGameUi();
+}
+
+function gameSell(good) {
+  if (gameState[good] <= 0) {
+    logMsg(currentLang === "pl" ? "Brak towaru w magazynie do sprzedaży!" : "No finished goods in stock to sell!");
+    return;
+  }
+  var basePrice = gameState.prices[good];
+  if (gameState.upgrades.crane) basePrice = Math.round(basePrice * 1.15);
+  gameState[good]--;
+  gameState.money += basePrice;
+  logMsg((currentLang === "pl" ? "Sprzedano 1x " : "Sold 1x ") + good + " (+$" + basePrice + ")");
+  updateGameUi();
+}
+
+function gameProduce(recipe) {
+  if (gameState.producing) {
+    logMsg(currentLang === "pl" ? "Linia produkcyjna jest już zajęta!" : "Production line is currently busy!");
+    return;
+  }
+  if (recipe === "steel") {
+    if (gameState.iron < 2 || gameState.coal < 1) {
+      logMsg(currentLang === "pl" ? "Do wytopu stali potrzebujesz 2x ruda żelaza i 1x węgiel!" : "Smelting steel requires 2x iron ore and 1x coal!");
+      return;
+    }
+    gameState.iron -= 2;
+    gameState.coal -= 1;
+    startProductionCycle("steel", gameState.upgrades.furnace ? 1800 : 3000);
+  } else if (recipe === "tools") {
+    if (gameState.steel < 1 || gameState.coal < 1) {
+      logMsg(currentLang === "pl" ? "Do wytworzenia narzędzi potrzebujesz 1x stal i 1x węgiel!" : "Crafting tools requires 1x steel and 1x coal!");
+      return;
+    }
+    gameState.steel -= 1;
+    gameState.coal -= 1;
+    startProductionCycle("tools", gameState.upgrades.furnace ? 2400 : 4000);
+  }
+  updateGameUi();
+}
+
+function startProductionCycle(item, durationMs) {
+  gameState.producing = item;
+  var start = Date.now();
+  var pBar = document.getElementById("prodBar");
+  var pStatus = document.getElementById("prodStatus");
+  pStatus.textContent = (currentLang === "pl" ? "Produkcja: " : "Manufacturing: ") + item + "...";
+
+  var timer = setInterval(function() {
+    var elapsed = Date.now() - start;
+    var pct = Math.min(100, Math.round((elapsed / durationMs) * 100));
+    pBar.style.width = pct + "%";
+
+    if (elapsed >= durationMs) {
+      clearInterval(timer);
+      pBar.style.width = "0%";
+      gameState[item]++;
+      gameState.producing = null;
+      pStatus.textContent = I18N[currentLang].prodReady;
+      logMsg((currentLang === "pl" ? "Ukończono produkcję: +1x " : "Production finished: +1x ") + item);
+      updateGameUi();
+    }
+  }, 50);
+}
+
+function gameUpgrade(type) {
+  if (type === "furnace") {
+    if (gameState.money < 200) {
+      logMsg(currentLang === "pl" ? "Wymagane $200 na zakup szybszego pieca!" : "$200 required to purchase faster furnace!");
+      return;
+    }
+    gameState.money -= 200;
+    gameState.upgrades.furnace = true;
+    logMsg(currentLang === "pl" ? "Kupiono ulepszenie: Szybszy piec (-40% czasu produkcji)!" : "Upgrade purchased: Faster Furnace (-40% craft time)!");
+  } else if (type === "crane") {
+    if (gameState.money < 350) {
+      logMsg(currentLang === "pl" ? "Wymagane $350 na automatyzację logistyki!" : "$350 required for logistics automation!");
+      return;
+    }
+    gameState.money -= 350;
+    gameState.upgrades.crane = true;
+    logMsg(currentLang === "pl" ? "Kupiono ulepszenie: Automatyzacja logistyki (+15% do cen sprzedaży)!" : "Upgrade purchased: Logistics Automation (+15% sell prices)!");
+  }
+  updateGameUi();
+}
+
+// Dynamic market tick for mini-game
+setInterval(function() {
+  gameState.prices.iron = Math.max(8, Math.min(26, gameState.prices.iron + Math.floor((Math.random() - 0.48) * 3)));
+  gameState.prices.coal = Math.max(5, Math.min(18, gameState.prices.coal + Math.floor((Math.random() - 0.48) * 3)));
+  gameState.prices.steel = Math.max(35, Math.min(75, gameState.prices.steel + Math.floor((Math.random() - 0.48) * 5)));
+  gameState.prices.tools = Math.max(85, Math.min(160, gameState.prices.tools + Math.floor((Math.random() - 0.48) * 7)));
+  updateGameUi();
+}, 4000);
+
+// Init
+applyTranslations();
+loadConfig();
+retryServer();
+updateGameUi();
+</script>
+</body>
+</html>

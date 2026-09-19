@@ -1,0 +1,10 @@
+server {
+    listen 80;
+    server_name twoja-domena.pl;
+    location / { root /var/www/tycoon/frontend; try_files $uri /index.html; }
+    location /api/ { proxy_pass http://127.0.0.1:8000; proxy_set_header Host $host; }
+    location /ws { proxy_pass http://127.0.0.1:8000; proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade"; }
+}
+# HTTPS: sudo certbot --nginx -d twoja-domena.pl
+# Backend jako systemd lub docker compose na VPS (patrz README).

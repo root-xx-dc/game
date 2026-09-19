@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="dark-oak">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Polityka Prywatności i Pliki Cookies | NEON MAGNAT</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<style>
+body {
+  padding: 24px 16px 60px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.privacy-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+}
+h1 { font-size: 24px; margin-top: 0; color: var(--acc); }
+h2 { font-size: 18px; margin: 20px 0 8px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+p, li { font-size: 14px; line-height: 1.6; color: var(--txt); }
+ul { padding-left: 20px; }
+</style>
+</head>
+<body>
+<div class="privacy-card">
+  <div class="row" style="justify-content:space-between;margin-bottom:16px">
+    <a href="index.html" class="btn sm g">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Wróć do gry
+    </a>
+    <span class="tag">RODO / GDPR Ready</span>
+  </div>
+
+  <h1>Polityka Prywatności i Plików Cookies</h1>
+  <p class="mut">Ostatnia aktualizacja: wrzesień 2026 r.</p>
+
+  <h2>1. Informacje ogólne</h2>
+  <p>
+    Szanujemy prywatność graczy w grze <b>NEON MAGNAT</b>. Niniejszy dokument wyjaśnia zasady przetwarzania danych, stosowania pamięci przeglądarki (Cookies & LocalStorage) oraz bezpieczeństwa.
+  </p>
+
+  <h2>2. Wykorzystanie pamięci lokalnej (LocalStorage & Cookies)</h2>
+  <p>
+    Gra nie stosuje agresywnych skryptów śledzących ani reklamowych firm trzecich. Pamięć lokalna (LocalStorage) służy wyłącznie prawidłowemu działaniu gry:
+  </p>
+  <ul>
+    <li><b>tycoon_tok</b> - token autoryzacyjny sesji gracza (JWT) po zalogowaniu.</li>
+    <li><b>tycoon_lang</b> - wybrany język interfejsu (Polski / English).</li>
+    <li><b>tycoon_theme</b> - wybrany motyw graficzny (Ciemny dąb, Gwiezdna noc itp.).</li>
+    <li><b>tycoon_gui_config</b> - indywidualna konfiguracja ułożenia menu, gęstości oraz kafelków.</li>
+    <li><b>neon_demo</b> - lokalny stan postępu w trybie offline/demo bez logowania.</li>
+  </ul>
+
+  <h2>3. Dane konta i integracja z Discordem</h2>
+  <p>
+    W przypadku rejestracji przetwarzamy nazwę gracza, adres e-mail (w celach odzyskiwania dostępu) oraz hasło w postaci bezpiecznego hasha (bcrypt). W przypadku logowania przez bota Discord przetwarzamy wyłącznie publiczne ID konta Discord oraz nick w celu powiązania z postacią w grze.
+  </p>
+
+  <h2>4. Prawa użytkownika</h2>
+  <p>
+    Każdy gracz ma prawo do wglądu w swoje dane, ich modyfikacji w ustawieniach konta oraz zażądania usunięcia konta poprzez kontakt z administracją (patrz plik <code>config.yaml</code>).
+  </p>
+
+  <div style="margin-top:24px;text-align:center">
+    <a href="index.html" class="btn">Akceptuję i wracam do gry</a>
+  </div>
+</div>
+
+<script>
+var savedTheme = localStorage.getItem("tycoon_theme") || "dark-oak";
+document.documentElement.setAttribute("data-theme", savedTheme);
+</script>
+</body>
+</html>

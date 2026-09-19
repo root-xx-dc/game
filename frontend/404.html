@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="dark-oak">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>404 - Nie znaleziono strony | NEON MAGNAT</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<style>
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+}
+.box-404 {
+  max-width: 520px;
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 32px 24px;
+  text-align: center;
+}
+.num-404 {
+  font-size: 72px;
+  font-weight: 800;
+  color: var(--acc);
+  line-height: 1;
+  margin: 0 0 10px;
+  letter-spacing: 2px;
+}
+</style>
+</head>
+<body>
+<div class="box-404">
+  <div class="num-404">404</div>
+  <h2 style="margin:0 0 10px;font-size:22px">Strona nie została odnaleziona</h2>
+  <p class="mut" style="margin:0 0 24px;font-size:14px">
+    Adres, którego szukasz, nie istnieje lub został przeniesiony w inne miejsce.
+  </p>
+  <div class="row" style="justify-content:center;gap:10px">
+    <a href="index.html" class="btn">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>
+      Wróć do gry
+    </a>
+    <a href="../index.html" class="btn g">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Status serwera
+    </a>
+  </div>
+</div>
+<script>
+var savedTheme = localStorage.getItem("tycoon_theme") || "dark-oak";
+document.documentElement.setAttribute("data-theme", savedTheme);
+</script>
+</body>
+</html>

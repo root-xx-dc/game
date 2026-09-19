@@ -1,0 +1,12 @@
+[Unit]
+Description=Neon Magnat game server
+After=network.target
+[Service]
+Type=simple
+User=tycoon
+WorkingDirectory=/opt/tycoon/game
+EnvironmentFile=/opt/tycoon/game/.env
+ExecStart=/opt/tycoon/game/.venv/bin/uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port 8000
+Restart=always
+[Install]
+WantedBy=multi-user.target
