@@ -91,10 +91,10 @@ if os.path.isdir(FRONT):
         p = os.path.join(FRONT, sub)
         if os.path.isdir(p):
             app.mount(f"/{sub}", StaticFiles(directory=p), name=f"front-{sub}")
-    @app.get("/", include_in_schema=False)
+    @app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
     def root_page():
         return FileResponse(os.path.join(FRONT, "index.html"))
-    @app.get("/index.html", include_in_schema=False)
+    @app.api_route("/index.html", methods=["GET", "HEAD"], include_in_schema=False)
     def root_page2():
         return FileResponse(os.path.join(FRONT, "index.html"))
     @app.get("/privacy.html", include_in_schema=False)

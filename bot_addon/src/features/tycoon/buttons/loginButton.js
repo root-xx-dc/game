@@ -15,13 +15,13 @@ module.exports = {
       .setTitle('🔑 Twój Prywatny Kod Logowania')
       .setDescription(
         `Cześć **${user.username}**!\n\n` +
-        `Oto Twój unikalny, jednorazowy kod logowania do gry:\n\n` +
+        `Oto Twój prywatny, jednorazowy kod logowania do gry:\n\n` +
         `# \`${code}\`\n\n` +
         `📋 **Co teraz zrobić:**\n` +
-        `1. Przejdź na stronę gry w przeglądarce.\n` +
-        `2. W oknie logowania kliknij niebieski przycisk **„Zaloguj przez Discord”**.\n` +
-        `3. Wklej powyższy kod \`${code}\` i zatwierdź.\n\n` +
-        `🔒 *Ten kod jest widoczny TYLKO dla Ciebie. Nikt na kanale go nie widzi. Kod traci ważność za 15 minut.*`
+        `1. Przejdź na stronę gry: **http://100.111.112.57:7777/**\n` +
+        `2. W zakładce **„Kod z Discorda”** wklej kod: \`${code}\`\n` +
+        `3. Kliknij **„Zaloguj kodem Discord”** i wejdź do świata gry!\n\n` +
+        `🔒 *Ten kod jest widoczny TYLKO dla Ciebie. Traci ważność za 15 minut.*`
       )
       .setFooter({ text: 'NEON MAGNAT - Bezpieczna Autoryzacja Discord' })
       .setTimestamp();

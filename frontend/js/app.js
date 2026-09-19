@@ -475,19 +475,28 @@ const NAV_ITEMS = [
 ];
 
 function nav() {
+  const isPl = LANG === "pl";
   const navEl = $("#nav");
   if (navEl) {
-    navEl.innerHTML = NAV_ITEMS.map(([v, iconKey, tKey]) => `<button data-v="${v}" class="${VIEW === v ? "on" : ""}">${ic(iconKey)} ${t(tKey)}</button>`).join("");
+    if (!TOK) {
+      navEl.innerHTML = `
+        <button data-v="auth" class="${VIEW !== 'demo' && VIEW !== 'settings' ? 'on' : ''}">${ic('lock')} ${isPl ? 'Start i Logowanie' : 'Portal & Sign In'}</button>
+        <button data-v="demo" class="${VIEW === 'demo' ? 'on' : ''}">${ic('bolt')} ${isPl ? 'Tryb Demonstracyjny' : 'Demo Sandbox'}</button>
+        <button data-v="settings" class="${VIEW === 'settings' ? 'on' : ''}">${ic('gear')} ${t('nav_settings')}</button>
+      `;
+    } else {
+      navEl.innerHTML = NAV_ITEMS.map(([v, iconKey, tKey]) => `<button data-v="${v}" class="${VIEW === v ? "on" : ""}">${ic(iconKey)} ${t(tKey)}</button>`).join("");
+    }
     document.querySelectorAll("#nav button").forEach(b => b.onclick = () => go(b.dataset.v));
   }
 
   const m = TOK
-    ? [["dashboard", ic('dash')], ["demo", ic('bolt')], ["market", ic('chart')], ["chat", ic('chat')], ["production", ic('gear')], ["company", ic('factory')]]
-    : [["dashboard", ic('dash')], ["demo", ic('bolt')], ["market", ic('chart')], ["login", ic('lock')], ["register", ic('doc')]];
+    ? [["dashboard", ic('dash')], ["company", ic('factory')], ["market", ic('chart')], ["logistics", ic('truck')], ["investments", ic('coins')], ["chat", ic('chat')]]
+    : [["auth", ic('lock')], ["demo", ic('bolt')], ["settings", ic('gear')]];
   
   const mnavIn = $("#mnavIn");
   if (mnavIn) {
-    mnavIn.innerHTML = m.map(([v, e]) => `<button data-v="${v}" class="${VIEW === v ? "on" : ""}">${e}<br>${v}</button>`).join("");
+    mnavIn.innerHTML = m.map(([v, e]) => `<button data-v="${v}" class="${(v === 'auth' ? (VIEW !== 'demo' && VIEW !== 'settings') : VIEW === v) ? "on" : ""}">${e}<br>${v}</button>`).join("");
     document.querySelectorAll("#mnavIn button").forEach(b => b.onclick = () => go(b.dataset.v));
   }
 
@@ -503,6 +512,11 @@ function updateHeaderControls() {
 
   const gBtn = $("#hGuiBtn .gui-btn-text");
   if (gBtn) gBtn.textContent = t("guiBtn");
+
+  const cashEl = $("#hCash");
+  if (cashEl) {
+    cashEl.style.display = TOK ? "" : "none";
+  }
 
   const outBtn = $("#hOut");
   if (outBtn) {
@@ -599,8 +613,9 @@ async function render() {
   if (!A) return;
 
   if (!TOK) {
-    if (VIEW in DEMO_MAP) { DTAB = DEMO_MAP[VIEW]; return vDemo(A); }
-    if (!["login", "register", "demo", "settings", "admin"].includes(VIEW)) return authView(A);
+    if (VIEW === "demo") return vDemo(A);
+    if (VIEW === "settings") return vSet(A);
+    return authView(A, VIEW === "register" ? "register" : VIEW === "login" ? "login" : undefined);
   }
 
   try {
@@ -616,148 +631,227 @@ async function render() {
   }
 }
 
-function authView(A) {
-  A.innerHTML = `
-    <div class="card hero">
-      <h2>NEON MAGNAT</h2>
-      <p>${t("welcomeHero")}</p>
-      <div class="row">
-        <button class="btn dc" onclick="openDiscordLoginModal()">${ic('discord')} ${LANG === "pl" ? "Zaloguj przez Discord" : "Login with Discord"}</button>
-        <button class="btn" onclick="go('login')">${t("login")}</button>
-        <button class="btn g" onclick="go('register')">${t("register")}</button>
-        <button class="btn g" onclick="go('demo')">${t("demoWithoutAcc")}</button>
-        <a class="btn g" href="../index.html" style="text-decoration:none">${ic('gear')} Status & Pomoc</a>
-      </div>
-      <p class="mut">${t("demoTagline")}</p>
-      <p class="mut">${t("serverStatus")} <span id="srv" class="tag">${t("serverChecking")}</span></p>
-    </div>
-  `;
-  serverOnline().then(ok => {
-    const e = $("#srv");
-    if (e) e.innerHTML = ok ? `<span class="live">● ${t("serverOnline")}</span>` : `○ ${t("serverOffline")}`;
-  });
-}
+let AUTH_TAB = "discord";
 
-function fieldErr(id, msg) { const e = $(id); if (e) e.textContent = msg; }
-
-function openDiscordLoginModal() {
-  const root = $("#modalRoot");
-  if (!root) return;
+function authView(A, activeTab) {
+  if (activeTab) AUTH_TAB = activeTab;
   const isPl = LANG === "pl";
-  root.innerHTML = `
-    <div class="modal-overlay" id="dcOverlay">
-      <div class="modal-box" style="max-width:440px">
-        <h3>${ic('discord')} ${isPl ? "Logowanie przez Discord" : "Discord Login"}</h3>
-        <p class="mut" style="font-size:13px;line-height:1.5">
-          ${isPl ? "Użyj komendy <code>/login</code> lub <code>/gra</code> na naszym serwerze Discord u bota RootX, aby otrzymać swój jednorazowy kod dostępu." : "Run <code>/login</code> or <code>/gra</code> on our Discord server with RootX bot to receive your one-time access code."}
+  
+  let tabContent = "";
+  if (AUTH_TAB === "discord") {
+    tabContent = `
+      <div class="dc-code-box">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px">
+          <svg style="width:26px;height:26px;fill:#5865F2" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+          <b style="font-size:16px;color:#fff">${isPl ? "Szybkie logowanie kodem z Discorda" : "Instant Login with Discord Code"}</b>
+        </div>
+        <p class="mut" style="font-size:13px;max-width:540px;margin:0 auto 12px;line-height:1.5">
+          ${isPl 
+            ? "Kliknij zielony przycisk <b>„Zaloguj do Gry”</b> na kanale Discord lub użyj komendy <code>/login</code> u bota RootX, a następnie wklej otrzymany 6-cyfrowy kod poniżej:"
+            : "Click the <b>„Login to Game”</b> button in our Discord channel or run <code>/login</code> with RootX bot, then paste your 6-digit access code below:"}
         </p>
-        <label>${isPl ? "Kod logowania od bota (np. DC-849201)" : "Login code from bot (e.g. DC-849201)"}
-          <input id="dcCodeIn" placeholder="DC-..." maxlength="32">
-        </label>
-        <div id="dcErr" class="err"></div>
-        <div class="row" style="justify-content:flex-end;margin-top:14px">
-          <button class="btn sm g" id="dcCloseBtn">${t("cancel")}</button>
-          <button class="btn sm dc" id="dcSubmitBtn">${ic('discord')} ${isPl ? "Zaloguj kodem" : "Verify & Login"}</button>
+        <div style="max-width:360px;margin:0 auto">
+          <input id="dcGateCode" class="dc-code-input" placeholder="DC-......" maxlength="32" autocomplete="off" spellcheck="false" autofocus>
+          <div id="dcGateErr" class="err" style="margin-bottom:8px"></div>
+          <button class="btn dc" id="dcGateSubmitBtn" style="width:100%;padding:12px;font-size:15px;font-weight:700">
+            ${ic('discord')} ${isPl ? "Zaloguj kodem Discord" : "Enter Game with Code"}
+          </button>
+        </div>
+      </div>
+    `;
+  } else if (AUTH_TAB === "login") {
+    tabContent = `
+      <div style="max-width:400px;margin:0 auto">
+        <label>${t("loginOrEmail")}<input id="l1" autocomplete="username" maxlength="120" placeholder="${isPl ? 'Nazwa gracza lub email' : 'Username or email'}"></label>
+        <label>${t("password")}<input id="l2" type="password" autocomplete="current-password" placeholder="••••••••"></label>
+        <div id="loginErr" class="err"></div>
+        <div class="row" style="margin-top:14px">
+          <button class="btn" id="lb" style="flex:1">${t("login")}</button>
+          <button class="btn g" onclick="authView(document.getElementById('app'), 'register')">${t("noAccount")}</button>
+        </div>
+      </div>
+    `;
+  } else if (AUTH_TAB === "register") {
+    tabContent = `
+      <div style="max-width:440px;margin:0 auto">
+        <label>${t("companyName")}<input id="r4" maxlength="60" placeholder="${isPl ? 'Np. Apex Industries' : 'E.g. Apex Industries'}"></label>
+        <label>${t("usernameMin3")}<input id="r1" maxlength="32" autocomplete="username" placeholder="${isPl ? 'Twój nick w grze' : 'Your in-game username'}"></label>
+        <label>${t("email")}<input id="r2" type="email" maxlength="120" autocomplete="email" placeholder="kontakt@firma.pl"></label>
+        <label>${t("passwordMin6")}<input id="r3" type="password" autocomplete="new-password" placeholder="••••••••"></label>
+        <div id="regErr" class="err"></div>
+        <div class="row" style="margin-top:14px">
+          <button class="btn" id="rb" style="flex:1">${t("register")}</button>
+          <button class="btn g" onclick="authView(document.getElementById('app'), 'login')">${t("login")}</button>
+        </div>
+      </div>
+    `;
+  } else if (AUTH_TAB === "demo") {
+    tabContent = `
+      <div style="text-align:center;padding:16px 0">
+        <h3>${ic('bolt')} ${isPl ? "Lokalny Tryb Demonstracyjny (Offline)" : "Local Demo Sandbox (Offline)"}</h3>
+        <p class="mut" style="max-width:540px;margin:10px auto 18px;line-height:1.5">
+          ${isPl 
+            ? "Wersja demo działa całkowicie w Twojej przeglądarce bez rejestracji i bez połączenia z serwerem. Możesz przetestować mechanikę rynku, zakupy, produkcję i ulepszenia budynków." 
+            : "The demo runs completely in your browser without registration and without server connection. You can test market mechanics, purchasing, manufacturing and building upgrades."}
+        </p>
+        <button class="btn" onclick="go('demo')" style="padding:10px 24px;font-size:15px">
+          ${ic('bolt')} ${isPl ? "Uruchom Wersję Demo" : "Launch Demo Mode"}
+        </button>
+      </div>
+    `;
+  }
+
+  A.innerHTML = `
+    <div class="portal-wrap">
+      <div class="portal-hero">
+        <div class="portal-badge">
+          <span class="live">●</span> ${isPl ? "Wspólny Świat Tycoon Online" : "Single Shared Tycoon Universe"}
+        </div>
+        <div class="portal-title">NEON MAGNAT</div>
+        <div class="portal-subtitle">
+          ${isPl 
+            ? "Zbuduj globalną korporację w jednym wspólnym świecie handlu, logistyki magazynowej w 10 miastach i inwestycji giełdowych w koncern RootX." 
+            : "Build your corporate empire in a single persistent universe of multi-city trade, warehouse logistics, and RootX stock exchange investments."}
+        </div>
+        <div style="font-size:12px;color:var(--mut);margin-bottom:4px">
+          ${t("serverStatus")} <span id="srv" class="tag">${t("serverChecking")}</span>
+        </div>
+      </div>
+
+      <div class="portal-card">
+        <div class="portal-tabs">
+          <button class="portal-tab ${AUTH_TAB === 'discord' ? 'active' : ''}" onclick="authView(document.getElementById('app'), 'discord')">
+            ${ic('discord')} ${isPl ? "Kod z Discorda" : "Discord Code"}
+          </button>
+          <button class="portal-tab ${AUTH_TAB === 'login' ? 'active' : ''}" onclick="authView(document.getElementById('app'), 'login')">
+            ${ic('lock')} ${isPl ? "Logowanie Hasłem" : "Password Login"}
+          </button>
+          <button class="portal-tab ${AUTH_TAB === 'register' ? 'active' : ''}" onclick="authView(document.getElementById('app'), 'register')">
+            ${ic('doc')} ${isPl ? "Załóż Firmę" : "Register"}
+          </button>
+          <button class="portal-tab ${AUTH_TAB === 'demo' ? 'active' : ''}" onclick="authView(document.getElementById('app'), 'demo')">
+            ${ic('bolt')} ${isPl ? "Podgląd Demo" : "Demo Preview"}
+          </button>
+        </div>
+
+        <div id="portalTabArea">
+          ${tabContent}
+        </div>
+      </div>
+
+      <!-- Podsumowanie Świata Gry -->
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon">${ic('map')}</div>
+          <h4>${isPl ? "Wspólny Świat (Single Lobby)" : "Single Shared World"}</h4>
+          <p>${isPl ? "Brak podziału na pokoje. Wszyscy gracze działają na tym samym rynku dynamicznym." : "No rooms or split lobbies. All players operate on one live dynamic economy."}</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">${ic('coins')}</div>
+          <h4>${isPl ? "Giełda i Akcje RootX" : "RootX Corporation & Stocks"}</h4>
+          <p>${isPl ? "Inwestuj w koncern ROOTX ($250.00), czerp 4.5% dywidendy rocznie i buduj portfolio." : "Invest in ROOTX conglomerate ($250.00), earn 4.5% annual dividends, and hold equity."}</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">${ic('truck')}</div>
+          <h4>${isPl ? "10 Miast & Magazyny" : "10 European Hubs & Logistics"}</h4>
+          <p>${isPl ? "Buduj magazyny w Warszawie, Berlinie czy Londynie. Flota cargo z realnymi odległościami w km." : "Manage warehouses in Warsaw, Berlin, Paris, London. Cargo fleet with real travel times."}</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">${ic('factory')}</div>
+          <h4>${isPl ? "5 Sektorów Przemysłu" : "5 Industrial Sectors"}</h4>
+          <p>${isPl ? "Wydobycie, Przemysł, High-Tech, Spedycja i Energetyka ze specjalizacjami branżowymi." : "Mining, Manufacturing, High-Tech, Freight and Energy with tier-based bonuses."}</p>
         </div>
       </div>
     </div>
   `;
-  $("#dcOverlay").onclick = e => { if (e.target.id === "dcOverlay") root.innerHTML = ""; };
-  $("#dcCloseBtn").onclick = () => root.innerHTML = "";
-  $("#dcSubmitBtn").onclick = async () => {
-    const code = ($("#dcCodeIn").value || "").trim();
-    if (!code) return fieldErr("#dcErr", isPl ? "Wpisz kod od bota." : "Enter code from Discord bot.");
-    const btn = $("#dcSubmitBtn");
-    btn.disabled = true; btn.textContent = t("connecting");
-    try {
-      const res = await api("/api/auth/discord", { method: "POST", body: JSON.stringify({ code }) }).catch(() => {
-        return { token: "dc_token_" + code, username: "DiscordPlayer" };
-      });
-      TOK = res.token;
-      localStorage.setItem("tycoon_tok", TOK);
-      root.innerHTML = "";
-      toast(isPl ? "Zalogowano pomyślnie przez Discord!" : "Logged in via Discord!", true);
-      go("dashboard");
-    } catch (e) {
-      fieldErr("#dcErr", e.message);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = isPl ? "Zaloguj kodem" : "Verify & Login";
-    }
-  };
+
+  // Sprawdzenie stanu serwera
+  serverOnline().then(ok => {
+    const e = $("#srv");
+    if (e) e.innerHTML = ok ? `<span class="live">● ${t("serverOnline")}</span>` : `○ ${t("serverOffline")}`;
+  });
+
+  // Obsługa akcji w zależności od aktywnej zakładki
+  if (AUTH_TAB === "discord") {
+    const dcInput = $("#dcGateCode");
+    const dcBtn = $("#dcGateSubmitBtn");
+    const doDiscordLogin = async () => {
+      fieldErr("#dcGateErr", "");
+      const code = (dcInput.value || "").trim().toUpperCase();
+      if (!code) return fieldErr("#dcGateErr", isPl ? "Wpisz kod z Discorda (np. DC-849201)." : "Enter Discord code (e.g. DC-849201).");
+      dcBtn.disabled = true; dcBtn.textContent = t("connecting");
+      try {
+        const res = await api("/api/auth/discord", { method: "POST", body: JSON.stringify({ code }) }).catch(() => {
+          return { token: "dc_token_" + code, username: "Player_" + code.replace(/[^0-9]/g, "").slice(-4) };
+        });
+        TOK = res.token;
+        localStorage.setItem("tycoon_tok", TOK);
+        toast(isPl ? `Zalogowano jako ${res.username || 'Gracz'}!` : `Logged in as ${res.username || 'Player'}!`, true);
+        go("dashboard");
+      } catch (e) {
+        fieldErr("#dcGateErr", e.message);
+      } finally {
+        dcBtn.disabled = false;
+        dcBtn.textContent = isPl ? "Zaloguj kodem Discord" : "Enter Game with Code";
+      }
+    };
+    if (dcBtn) dcBtn.onclick = doDiscordLogin;
+    if (dcInput) dcInput.onkeydown = e => { if (e.key === "Enter") doDiscordLogin(); };
+  } else if (AUTH_TAB === "login") {
+    const lb = $("#lb");
+    const doLogin = async () => {
+      fieldErr("#loginErr", "");
+      const l1 = ($("#l1").value || "").trim();
+      const l2 = $("#l2").value || "";
+      if (!l1) return fieldErr("#loginErr", isPl ? "Podaj login lub e-mail." : "Enter username or email.");
+      if (!l2) return fieldErr("#loginErr", isPl ? "Podaj hasło." : "Enter password.");
+      lb.disabled = true; lb.textContent = t("connecting");
+      try {
+        const j = await api("/api/auth/login", { method: "POST", body: JSON.stringify({ login: l1, password: l2 }) });
+        TOK = j.token;
+        localStorage.setItem("tycoon_tok", TOK);
+        if (j.away && (j.away.produced || []).length) toast((isPl ? "Podczas nieobecności: " : "Produced while away: ") + j.away.produced.join(", "), true);
+        toast(isPl ? "Zalogowano pomyślnie!" : "Login successful!", true);
+        go("dashboard");
+      } catch (e) { fieldErr("#loginErr", e.message); }
+      finally { lb.disabled = false; lb.textContent = t("login"); }
+    };
+    if (lb) lb.onclick = doLogin;
+    ["#l1", "#l2"].forEach(s => { const el = $(s); if (el) el.onkeydown = e => { if (e.key === "Enter") doLogin(); }; });
+  } else if (AUTH_TAB === "register") {
+    const rb = $("#rb");
+    const doReg = async () => {
+      fieldErr("#regErr", "");
+      const u = ($("#r1").value || "").trim(), m = ($("#r2").value || "").trim(), p = $("#r3").value || "", c = ($("#r4").value || "").trim() || "Moja Firma";
+      if (u.length < 3) return fieldErr("#regErr", isPl ? "Nazwa gracza: minimum 3 znaki." : "Username must be at least 3 chars.");
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)) return fieldErr("#regErr", isPl ? "Podaj poprawny e-mail." : "Enter valid email address.");
+      if (p.length < 6) return fieldErr("#regErr", isPl ? "Hasło: minimum 6 znaków." : "Password must be at least 6 chars.");
+      if (c.length < 2) return fieldErr("#regErr", isPl ? "Nazwa firmy: minimum 2 znaki." : "Company name must be at least 2 chars.");
+      rb.disabled = true; rb.textContent = t("creating");
+      try {
+        const j = await api("/api/auth/register", { method: "POST", body: JSON.stringify({ username: u, email: m, password: p, company: c }) });
+        TOK = j.token;
+        localStorage.setItem("tycoon_tok", TOK);
+        toast(isPl ? "Konto utworzone. Powodzenia!" : "Account created. Good luck!", true);
+        go("dashboard");
+      } catch (e) { fieldErr("#regErr", e.message); }
+      finally { rb.disabled = false; rb.textContent = t("register"); }
+    };
+    if (rb) rb.onclick = doReg;
+    ["#r1", "#r2", "#r3", "#r4"].forEach(s => { const el = $(s); if (el) el.onkeydown = e => { if (e.key === "Enter") doReg(); }; });
+  }
 }
-window.openDiscordLoginModal = openDiscordLoginModal;
+
+function fieldErr(id, msg) { const e = $(id); if (e) e.textContent = msg; }
 
 function vLogin(A) {
-  A.innerHTML = `
-    <div class="card narrow">
-      <h2>${t("loginTitle")}</h2>
-      <div style="margin-bottom:16px">
-        <button class="btn dc" style="width:100%" onclick="openDiscordLoginModal()">${ic('discord')} ${LANG === "pl" ? "Zaloguj przez Discord" : "Login with Discord"}</button>
-        <div style="text-align:center;margin:12px 0 6px;color:var(--mut);font-size:12px">- ${LANG === "pl" ? "LUB TRADYCYJNIE" : "OR TRADITIONAL"} -</div>
-      </div>
-      <label>${t("loginOrEmail")}<input id="l1" autocomplete="username" maxlength="120"></label>
-      <label>${t("password")}<input id="l2" type="password" autocomplete="current-password"></label>
-      <div class="row">
-        <button class="btn" id="lb">${t("login")}</button>
-        <button class="btn g" onclick="go('register')">${t("noAccount")}</button>
-      </div>
-      <p id="e" class="err"></p>
-    </div>
-  `;
-  const doLogin = async () => {
-    fieldErr("#e", "");
-    if (!$("#l1").value.trim()) return fieldErr("#e", LANG === "pl" ? "Podaj login lub e-mail." : "Enter username or email.");
-    if (!$("#l2").value) return fieldErr("#e", LANG === "pl" ? "Podaj hasło." : "Enter password.");
-    const btn = $("#lb"); btn.disabled = true; btn.textContent = t("connecting");
-    try {
-      const j = await api("/api/auth/login", { method: "POST", body: JSON.stringify({ login: $("#l1").value.trim(), password: $("#l2").value }) });
-      TOK = j.token;
-      localStorage.setItem("tycoon_tok", TOK);
-      if (j.away && (j.away.produced || []).length) toast((LANG === "pl" ? "Podczas nieobecności: " : "Produced while away: ") + j.away.produced.join(", "), true);
-      go("dashboard");
-    } catch (e) { fieldErr("#e", e.message); }
-    finally { btn.disabled = false; btn.textContent = t("login"); }
-  };
-  $("#lb").onclick = doLogin;
-  $("#l2").onkeydown = e => { if (e.key === "Enter") doLogin(); };
+  authView(A, "login");
 }
 
 function vReg(A) {
-  A.innerHTML = `
-    <div class="card narrow">
-      <h2>${t("register")}</h2>
-      <label>${t("usernameMin3")}<input id="r1" maxlength="32" autocomplete="username"></label>
-      <label>${t("email")}<input id="r2" type="email" maxlength="120" autocomplete="email"></label>
-      <label>${t("passwordMin6")}<input id="r3" type="password" autocomplete="new-password"></label>
-      <label>${t("companyName")}<input id="r4" maxlength="60" placeholder="${LANG === "pl" ? "Np. Stalowy Gigant" : "E.g. Steel Titan"}"></label>
-      <div class="row">
-        <button class="btn" id="rb">${t("register")}</button>
-        <button class="btn g" onclick="go('demo')">${t("tryDemoFirst")}</button>
-      </div>
-      <p id="e" class="err"></p>
-    </div>
-  `;
-  const doReg = async () => {
-    fieldErr("#e", "");
-    const u = $("#r1").value.trim(), m = $("#r2").value.trim(), p = $("#r3").value, c = $("#r4").value.trim() || "Moja Firma";
-    if (u.length < 3) return fieldErr("#e", LANG === "pl" ? "Nazwa gracza: minimum 3 znaki." : "Username must be at least 3 chars.");
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)) return fieldErr("#e", LANG === "pl" ? "Podaj poprawny e-mail." : "Enter valid email address.");
-    if (p.length < 6) return fieldErr("#e", LANG === "pl" ? "Hasło: minimum 6 znaków." : "Password must be at least 6 chars.");
-    if (c.length < 2) return fieldErr("#e", LANG === "pl" ? "Nazwa firmy: minimum 2 znaki." : "Company name must be at least 2 chars.");
-    const rb = $("#rb"); rb.disabled = true; rb.textContent = t("creating");
-    try {
-      const j = await api("/api/auth/register", { method: "POST", body: JSON.stringify({ username: u, email: m, password: p, company: c }) });
-      TOK = j.token;
-      localStorage.setItem("tycoon_tok", TOK);
-      toast(LANG === "pl" ? "Konto utworzone. Powodzenia!" : "Account created. Good luck!", true);
-      go("dashboard");
-    } catch (e) { fieldErr("#e", e.message); }
-    finally { rb.disabled = false; rb.textContent = t("register"); }
-  };
-  $("#rb").onclick = doReg;
-  ["#r1", "#r2", "#r3", "#r4"].forEach(s => $(s).onkeydown = e => { if (e.key === "Enter") doReg(); });
+  authView(A, "register");
 }
+
 
 /* ==========================================================
    Dashboard z Personalizacją Układu (GUI Customization)
