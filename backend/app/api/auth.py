@@ -56,25 +56,81 @@ def password(d: PasswordChange, u: User = Depends(current_user), db: Session = D
     u.pw = hash_pw(d.new); db.commit()
     return {"ok": True}
 
+from datetime import datetime, timedelta
+
+# Bezpieczny magazyn jednorazowych kodów logowania wygenerowanych przez bota
+DISCORD_LOGIN_CODES: dict[str, dict] = {}
+
+@router.post("/discord/code")
+def discord_register_code(d: dict):
+    """Endpoint dla bota Discord do rejestracji jednorazowego kodu po kliknięciu przycisku."""
+    code = str(d.get("code") or "").strip().upper()
+    discord_id = str(d.get("discord_id") or "").strip()
+    username = str(d.get("username") or "").strip()
+
+    if not code or not discord_id:
+        raise HTTPException(400, "Wymagane pola: code, discord_id.")
+
+    norm_code = re.sub(r"[^A-Za-z0-9]", "", code)
+    expires_at = datetime.utcnow() + timedelta(minutes=15)
+
+    DISCORD_LOGIN_CODES[norm_code] = {
+        "discord_id": discord_id,
+        "username": username or f"Player_{discord_id[-4:]}",
+        "avatar": str(d.get("avatar") or ""),
+        "expires_at": expires_at
+    }
+    return {"ok": True, "code": norm_code, "expires_in_minutes": 15}
+
 @router.post("/discord")
 def discord_login(d: dict, db: Session = Depends(get_db)):
-    code = str(d.get("code") or "").strip()
-    if not code:
-        raise HTTPException(400, "Kod Discord jest wymagany.")
-    # Normalizacja kodu logowania z bota
-    norm_code = re.sub(r"[^A-Za-z0-9]", "", code.upper())
-    uname = f"DC_{norm_code[-6:]}" if len(norm_code) >= 6 else f"DC_{norm_code}"
-    u = db.query(User).filter(User.username == uname).first()
-    if not u:
-        u = User(username=uname, email=f"{uname.lower()}@discord.neonmagnat.local", pw=hash_pw(norm_code + "_dc_salt"))
-        db.add(u); db.flush()
-        c = Company(user_id=u.id, name=f"{uname} Enterprises")
-        db.add(c); db.flush()
-        for item in ("iron", "coal"):
-            db.add(Inventory(user_id=u.id, item_id=item, qty=50, avg_cost=ITEMS[item]))
-        db.add(Log(kind="auth", user_id=u.id, text=f"discord register {u.username}"))
-        db.commit()
-    from datetime import datetime
+    """Logowanie gracza z poziomu strony WWW przy użyciu kodu od bota."""
+    raw_code = str(d.get("code") or "").strip().upper()
+    if not raw_code:
+        raise HTTPException(400, "Kod logowania Discord jest wymagany.")
+
+    norm_code = re.sub(r"[^A-Za-z0-9]", "", raw_code)
+
+    # 1. Sprawdzenie czy kod został zarejestrowany przez bota
+    reg = DISCORD_LOGIN_CODES.get(norm_code)
+    if reg:
+        if datetime.utcnow() > reg["expires_at"]:
+            DISCORD_LOGIN_CODES.pop(norm_code, None)
+            raise HTTPException(400, "Kod logowania wygasł. Kliknij przycisk na Discordzie ponownie.")
+
+        d_user = reg["username"]
+        d_id = reg["discord_id"]
+        # Usuń jednorazowy kod po użyciu
+        DISCORD_LOGIN_CODES.pop(norm_code, None)
+
+        safe_name = re.sub(r"[^a-zA-Z0-9_]", "", d_user)[:28] or f"Player_{d_id[-4:]}"
+        email = f"{d_id}@discord.neonmagnat.local"
+
+        u = db.query(User).filter((User.email == email) | (User.username == safe_name)).first()
+        if not u:
+            u = User(username=safe_name, email=email, pw=hash_pw(d_id + "_dc_salt"))
+            db.add(u); db.flush()
+            c = Company(user_id=u.id, name=f"{safe_name} Enterprise", sector="Manufacturing", headquarters_city="Warszawa")
+            db.add(c); db.flush()
+            for item in ("iron", "coal"):
+                db.add(Inventory(user_id=u.id, city="Warszawa", item_id=item, qty=50, avg_cost=ITEMS[item]))
+            db.add(Log(kind="auth", user_id=u.id, text=f"Discord register {u.username} (ID {d_id})"))
+            db.commit()
+    else:
+        # 2. Tryb bezpośredniego kodu (np. DC-XXXXXX)
+        uname = f"DC_{norm_code[-6:]}" if len(norm_code) >= 6 else f"DC_{norm_code}"
+        email = f"{uname.lower()}@discord.neonmagnat.local"
+        u = db.query(User).filter((User.username == uname) | (User.email == email)).first()
+        if not u:
+            u = User(username=uname, email=email, pw=hash_pw(norm_code + "_dc_salt"))
+            db.add(u); db.flush()
+            c = Company(user_id=u.id, name=f"{uname} Enterprises", sector="Manufacturing", headquarters_city="Warszawa")
+            db.add(c); db.flush()
+            for item in ("iron", "coal"):
+                db.add(Inventory(user_id=u.id, city="Warszawa", item_id=item, qty=50, avg_cost=ITEMS[item]))
+            db.add(Log(kind="auth", user_id=u.id, text=f"discord register {u.username}"))
+            db.commit()
+
     u.last_login = datetime.utcnow()
     from app.services.settle import settle
     from app.services.missions import ensure_missions
@@ -82,4 +138,5 @@ def discord_login(d: dict, db: Session = Depends(get_db)):
     ensure_missions(db, u.id)
     db.commit()
     return {"token": make_token(u.id, u.is_admin), "username": u.username, "admin": u.is_admin, "away": rep}
+
 

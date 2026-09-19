@@ -49,9 +49,11 @@ Companies can choose and pivot their strategic industry profile:
 - Player-to-player trade contracts secured with upfront **escrow**.
 - Breach of contract carries heavy penalties, reputation loss, and court lawsuits.
 
-### 7. Discord Bot Authentication & Community
-- Fast login via Discord bot command `/login` with single-use verification codes.
-- Global, group, and private 1:1 real-time chat powered by WebSockets.
+### 7. Discord Bot Authentication & Dedicated Login Channel
+- **Channel Assignment (`/tycoon-channel #channel`)**: Administrators can bind a dedicated login channel on Discord where the bot posts a persistent interactive button (`[🎮 Log in to NEON MAGNAT]`).
+- **Private Ephemeral Codes**: When a player clicks the button, the bot generates a secure, one-time 6-digit access code delivered via a private ephemeral message visible **strictly to that clicking user**. No other member in the channel sees the code.
+- **Zero IP Exposure**: Players connect through their web browser without ever knowing or contacting the bot's private IP address, hosting server, or backend tokens.
+- **WebSocket Community Chat**: Global, group, and private 1:1 real-time chat powered by WebSockets.
 
 ### 8. Customization & Offline Mode
 - 5 curated CSS themes (Dark Oak, Starry Night, Industrial Slate, Forest Emerald, Obsidian) - no jarring neon AI aesthetics.
