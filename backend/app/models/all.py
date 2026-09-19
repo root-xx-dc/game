@@ -22,7 +22,9 @@ class Company(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(60))
     logo: Mapped[str] = mapped_column(String(10), default="factory")
-    sector: Mapped[str] = mapped_column(String(30), default="Industry")
+    sector: Mapped[str] = mapped_column(String(30), default="Manufacturing")
+    headquarters_city: Mapped[str] = mapped_column(String(30), default="Warszawa")
+    specialization_tier: Mapped[int] = mapped_column(default=1)
     level: Mapped[int] = mapped_column(default=1)
     xp: Mapped[int] = mapped_column(default=0)
     reputation: Mapped[int] = mapped_column(default=50)
@@ -34,11 +36,22 @@ class Company(Base):
     value: Mapped[float] = mapped_column(default=10000.0)
     last_seen: Mapped[datetime] = mapped_column(DateTime, default=now)
 
+class Warehouse(Base):
+    __tablename__ = "warehouses"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    city: Mapped[str] = mapped_column(String(30), index=True)
+    capacity: Mapped[float] = mapped_column(default=5000.0)
+    level: Mapped[int] = mapped_column(default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
+    __table_args__ = (UniqueConstraint("user_id", "city"),)
+
 class Building(Base):
     __tablename__ = "buildings"
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     type: Mapped[str] = mapped_column(String(30), index=True)
+    city: Mapped[str] = mapped_column(String(30), default="Warszawa")
     level: Mapped[int] = mapped_column(default=1)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
 
@@ -55,10 +68,11 @@ class Inventory(Base):
     __tablename__ = "inventory"
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    city: Mapped[str] = mapped_column(String(30), default="Warszawa", index=True)
     item_id: Mapped[str] = mapped_column(String(30), index=True)
     qty: Mapped[float] = mapped_column(default=0.0)
     avg_cost: Mapped[float] = mapped_column(default=0.0)
-    __table_args__ = (UniqueConstraint("user_id", "item_id"),)
+    __table_args__ = (UniqueConstraint("user_id", "city", "item_id"),)
 
 class MarketItem(Base):
     __tablename__ = "market_items"
@@ -129,6 +143,8 @@ class Shipment(Base):
     origin: Mapped[str] = mapped_column(String(30))
     dest: Mapped[str] = mapped_column(String(30))
     arrive: Mapped[datetime] = mapped_column(DateTime, default=now)
+    cost: Mapped[float] = mapped_column(default=0.0)
+    distance_km: Mapped[float] = mapped_column(default=0.0)
     done: Mapped[bool] = mapped_column(default=False)
 
 class Holding(Base):

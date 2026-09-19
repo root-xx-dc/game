@@ -238,3 +238,71 @@ def test_chat_groups_and_spam():
     assert c.post(f"/api/chat/groups/{gid}", json={"text": "za szybko"}, headers=b).status_code == 429
     got = c.get(f"/api/chat/groups/{gid}", headers=a).json()["messages"]
     assert any(m["text"] == "Siema ekipa" for m in got)
+
+def test_rootx_investment():
+    h = auth_flow()
+    inv_res = c.get("/api/investments", headers=h)
+    assert inv_res.status_code == 200
+    data = inv_res.json()
+    assert "ROOTX" in data["stocks"]
+    assert data["stocks"]["ROOTX"] == 250.0
+    assert data["rootx_spotlight"]["symbol"] == "ROOTX"
+
+    # Buy RootX shares
+    r_buy = c.post("/api/investments/buy", json={"symbol": "ROOTX", "qty": 10}, headers=h)
+    assert r_buy.status_code == 200, r_buy.text
+
+    # Verify portfolio has RootX
+    inv_after = c.get("/api/investments", headers=h).json()
+    assert any(m["s"] == "ROOTX" and m["qty"] == 10 for m in inv_after["mine"])
+
+    # Sell some RootX shares
+    r_sell = c.post("/api/investments/sell", json={"symbol": "ROOTX", "qty": 5}, headers=h)
+    assert r_sell.status_code == 200
+    assert r_sell.json()["left"] == 5
+
+def test_logistics_and_warehouses():
+    h = auth_flow()
+    log_res = c.get("/api/logistics", headers=h)
+    assert log_res.status_code == 200
+    data = log_res.json()
+    assert len(data["warehouses"]) >= 1
+
+    # Quote calculation between cities
+    q_res = c.get("/api/logistics/quote?origin=Katowice&dest=Berlin&vehicle=Truck&qty=50", headers=h)
+    assert q_res.status_code == 200
+    q = q_res.json()
+    assert q["distance_km"] > 0
+    assert q["travel_minutes"] > 0
+    assert q["cost"] > 0
+
+    # Build warehouse in Berlin
+    b_wh = c.post("/api/logistics/warehouse/build", json={"city": "Berlin"}, headers=h)
+    assert b_wh.status_code in (200, 400) # 200 if enough funds
+
+    # Arbitrage scanner
+    arb_res = c.get("/api/market/arbitrage", headers=h)
+    assert arb_res.status_code == 200
+    assert "opportunities" in arb_res.json()
+
+def test_sectors_and_map():
+    h = auth_flow()
+    sec_res = c.get("/api/sectors", headers=h)
+    assert sec_res.status_code == 200
+    sec_data = sec_res.json()
+    assert "Mining" in sec_data["sectors"]
+    assert "HighTech" in sec_data["sectors"]
+
+    # Change sector to HighTech
+    set_sec = c.post("/api/sectors/select", json={"sector": "HighTech"}, headers=h)
+    assert set_sec.status_code == 200
+    assert set_sec.json()["sector"] == "HighTech"
+
+    # Map returns enriched cities
+    m_res = c.get("/api/map", headers=h)
+    assert m_res.status_code == 200
+    m_data = m_res.json()
+    assert len(m_data["cities"]) >= 6
+    assert any(ci["name"] == "Katowice" for ci in m_data["cities"])
+    assert any(ci["name"] == "Berlin" for ci in m_data["cities"])
+

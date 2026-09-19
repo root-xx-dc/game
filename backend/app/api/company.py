@@ -11,7 +11,7 @@ def company(u: User = Depends(current_user), db: Session = Depends(get_db)):
     rep = settle(db, u.id); db.commit()
     c = db.query(Company).filter_by(user_id=u.id).one()
     return {"company": {k: getattr(c, k) for k in
-        ("name","logo","sector","level","xp","reputation","money","assets","debt","revenue","expenses","value")},
+        ("name","logo","sector","level","xp","reputation","money","assets","debt","revenue","expenses","value","headquarters_city","specialization_tier")},
         "away": rep}
 @router.patch("/company")
 def patch(d: CompanyPatch, u: User = Depends(current_user), db: Session = Depends(get_db)):

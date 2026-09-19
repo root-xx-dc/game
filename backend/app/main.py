@@ -73,6 +73,7 @@ app.include_router(people.emp); app.include_router(people.res)
 app.include_router(people.prop)
 app.include_router(world.m); app.include_router(world.n)
 app.include_router(world.r); app.include_router(world.a)
+app.include_router(world.sec)
 app.include_router(admin.router)
 app.include_router(chat.router)
 

@@ -637,3 +637,99 @@ body.density-compact th, body.density-compact td {
   align-items: center;
 }
 
+/* RootX Hero Spotlight */
+.stock-hero {
+  background: linear-gradient(135deg, var(--panel) 0%, rgba(212, 149, 71, 0.08) 100%);
+  border: 1px solid var(--acc);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+.stock-hero h3 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  color: var(--acc);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hero-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+.hero-stat {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+.hero-stat .val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--acc);
+}
+.hero-stat .lbl {
+  font-size: 11px;
+  color: var(--mut);
+  text-transform: uppercase;
+}
+
+/* Progress bar for capacity & transport */
+.prog-wrap {
+  width: 100%;
+  height: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 6px 0;
+}
+.prog-bar {
+  height: 100%;
+  background: var(--acc);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Warehouses Grid */
+.wh-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.wh-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+}
+.wh-card:hover {
+  border-color: var(--acc);
+}
+
+/* Arbitrage Box */
+.arbitrage-card {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.arbitrage-route {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+

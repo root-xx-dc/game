@@ -829,17 +829,74 @@ function logoIc(n) { return ic(ICONS[n] ? n : "factory"); }
 
 async function vCompany(A) {
   const c = await api("/api/company");
+  const sec = await api("/api/sectors").catch(() => ({ sectors: {} }));
   const logos = ["factory", "buildings", "bank", "coins", "chart", "trophy", "shield", "bolt"];
-  A.innerHTML = `<div class="card"><h2>${logoIc(c.company.logo)} ${esc(c.company.name)}</h2><div class="row"><input id="cn" value="${esc(c.company.name)}" style="max-width:240px"><select id="cl" style="max-width:160px">${logos.map(l => `<option ${c.company.logo === l ? "selected" : ""}>${l}</option>`).join("")}</select><button class="btn sm" id="cs">${t("save")}</button></div>
-  <table>${Object.entries(c.company).map(([k, v]) => `<tr><td>${k}</td><td><b>${k === "logo" ? logoIc(v) + " " + esc(v) : esc(v)}</b></td></tr>`).join("")}</table></div>`;
-  $("#cs").onclick = async () => { try { await api("/api/company", { method: "PATCH", body: JSON.stringify({ name: $("#cn").value, logo: $("#cl").value }) }); render(); } catch (e) { toast(e.message, false); } };
+  const sectorList = Object.entries(sec.sectors || {});
+  const currentSec = (sec.sectors && sec.sectors[c.company.sector]) || null;
+  const isPl = LANG === "pl";
+
+  A.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div>
+          <h2>${logoIc(c.company.logo)} ${esc(c.company.name)}</h2>
+          <p class="mut">${isPl ? "Centrala operacyjna:" : "Headquarters:"} <b>${esc(c.company.headquarters_city || "Warszawa")}</b> | ${isPl ? "Wycena rynkowa:" : "Enterprise Value:"} <b style="color:var(--acc)">${Math.round(c.company.value).toLocaleString()} $</b></p>
+        </div>
+        <span class="tag live" style="font-size:14px;padding:6px 14px">${isPl ? "Branża:" : "Sector:"} ${currentSec ? (isPl ? currentSec.name_pl : currentSec.name_en) : c.company.sector}</span>
+      </div>
+
+      <div class="row" style="margin-top:14px">
+        <input id="cn" value="${esc(c.company.name)}" style="max-width:220px" placeholder="${isPl ? "Nazwa firmy" : "Company name"}">
+        <select id="cl" style="max-width:140px">${logos.map(l => `<option ${c.company.logo === l ? "selected" : ""}>${l}</option>`).join("")}</select>
+        <button class="btn sm" id="cs">${t("save")}</button>
+      </div>
+
+      <div style="margin-top:20px;padding:14px;background:var(--card-bg);border:1px solid var(--line);border-radius:10px">
+        <h3 style="margin-top:0">${ic('target')} ${isPl ? "Specjalizacja Przemysłowa i Bonusy Sektora" : "Industry Specialization & Perks"}</h3>
+        <p class="mut" style="font-size:13px">
+          ${currentSec ? (isPl ? currentSec.desc_pl : currentSec.desc_en) : (isPl ? "Wybierz profil działalności swojej firmy, aby otrzymać unikalne bonusy rynkowe i produkcyjne." : "Choose company profile to unlock unique industry bonuses.")}
+        </p>
+        <div class="row" style="margin-top:10px">
+          <select id="secSelect" style="max-width:280px">
+            ${sectorList.map(([k, s]) => `<option value="${k}" ${c.company.sector === k ? "selected" : ""}>${isPl ? s.name_pl : s.name_en}</option>`).join("")}
+          </select>
+          <button class="btn sm" id="secBtn">${isPl ? "Zmień Sektor" : "Set Sector"}</button>
+        </div>
+      </div>
+
+      <h3 style="margin-top:20px">${ic('bars')} ${isPl ? "Bilans Finansowy i Wskaźniki" : "Financial Balance & KPI"}</h3>
+      <table>
+        <tr><td>${isPl ? "Dostępne Środki" : "Liquid Cash"}</td><td><b style="color:var(--grn)">${Math.round(c.company.money).toLocaleString()} $</b></td></tr>
+        <tr><td>${isPl ? "Wartość Aktywów" : "Total Assets"}</td><td><b>${Math.round(c.company.assets).toLocaleString()} $</b></td></tr>
+        <tr><td>${isPl ? "Zadłużenie Bankowe" : "Bank Debt"}</td><td><b style="color:var(--red)">${Math.round(c.company.debt).toLocaleString()} $</b></td></tr>
+        <tr><td>${isPl ? "Poziom Doświadczenia" : "Company Level"}</td><td><b>Poziom ${c.company.level} (${c.company.xp} XP)</b></td></tr>
+        <tr><td>${isPl ? "Reputacja Rynkowa" : "Market Reputation"}</td><td><b>${c.company.reputation} / 100</b></td></tr>
+      </table>
+    </div>
+  `;
+
+  $("#cs").onclick = async () => {
+    try {
+      await api("/api/company", { method: "PATCH", body: JSON.stringify({ name: $("#cn").value, logo: $("#cl").value }) });
+      toast(isPl ? "Zapisano dane firmy." : "Company info saved.", true);
+      render();
+    } catch (e) { toast(e.message, false); }
+  };
+
+  $("#secBtn").onclick = async () => {
+    try {
+      await api("/api/sectors/select", { method: "POST", body: JSON.stringify({ sector: $("#secSelect").value }) });
+      toast(isPl ? "Zmieniono sektor działalności firmy!" : "Company sector updated!", true);
+      render();
+    } catch (e) { toast(e.message, false); }
+  };
 }
 
 async function vBuild(A) {
   const b = await api("/api/buildings");
   A.innerHTML = `<div class="card"><h2>${ic('buildings')} ${t("nav_buildings")}</h2><div class="tscroll"><table><tr><th>Type</th><th>Price</th><th>Upkeep/h</th><th>Bonus</th><th>Lvl</th><th></th></tr>
   ${Object.entries(b.catalog).map(([k, v]) => `<tr><td><b>${k}</b></td><td>${v.price}</td><td>${v.upkeep_h}</td><td>${v.bonus}</td><td>${v.req || 1}</td><td><button class="btn sm" data-b="${k}">${t("buy")}</button></td></tr>`).join("")}</table></div></div>
-  <div class="card"><h3>Owned (${b.owned.length})</h3>${b.owned.map(o => `<span class="tag">${o.type} lv${o.level}</span>`).join("") || "-"}</div>`;
+  <div class="card"><h3>Owned (${b.owned.length})</h3>${b.owned.map(o => `<span class="tag">${o.type} lv${o.level} (${o.city || "Warszawa"})</span>`).join("") || "-"}</div>`;
   A.querySelectorAll("[data-b]").forEach(x => x.onclick = async () => { try { await api("/api/buildings/buy", { method: "POST", body: JSON.stringify({ type: x.dataset.b }) }); render(); } catch (e) { toast(e.message, false); } });
 }
 
@@ -852,102 +909,577 @@ async function vProd(A) {
 }
 
 async function vInv(A) {
-  const p = await api("/api/production/inventory");
-  A.innerHTML = `<div class="card"><h2>${ic('box')} ${t("nav_inventory")}</h2><table>${p.items.map(i => `<tr><td><b>${i.item}</b></td><td>${i.qty}</td><td>avg ${i.avg}</td></tr>`).join("") || `<tr><td>${LANG === "pl" ? "Kup surowce na rynku." : "Buy raw materials on the market."}</td></tr>`}</table></div>`;
+  const l = await api("/api/logistics").catch(() => ({ warehouses: [] }));
+  const isPl = LANG === "pl";
+
+  A.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>${ic('box')} ${t("nav_inventory")} - ${isPl ? "Stan Magazynów w Miastach" : "Multi-City Warehouses"}</h2>
+        <button class="btn sm g" onclick="go('logistics')">${ic('truck')} ${isPl ? "Zarządzaj Logistyką" : "Manage Logistics"}</button>
+      </div>
+
+      ${(l.warehouses || []).map(w => `
+        <div class="wh-card" style="margin-top:14px">
+          <div class="row" style="justify-content:space-between">
+            <h3 style="margin:0">${ic('home')} ${esc(w.city)} <span class="tag">Lvl ${w.level}</span></h3>
+            <span class="mut">${w.used} / ${w.capacity} j.</span>
+          </div>
+          <div class="prog-wrap">
+            <div class="prog-bar" style="width:${Math.min(100, Math.round((w.used / w.capacity) * 100))}%"></div>
+          </div>
+          <table style="margin-top:10px">
+            <tr><th>${isPl ? "Towar" : "Item"}</th><th>${isPl ? "Ilość" : "Quantity"}</th><th>${isPl ? "Średni koszt" : "Avg Cost"}</th></tr>
+            ${(w.items || []).map(i => `<tr><td><b>${i.id}</b></td><td>${i.qty}</td><td>${i.avg_cost} $</td></tr>`).join("") || `<tr><td colspan="3" class="mut">${isPl ? "Magazyn jest pusty." : "Warehouse is empty."}</td></tr>`}
+          </table>
+        </div>
+      `).join("") || `<p class="mut">${isPl ? "Brak aktywnych magazynów." : "No warehouses found."}</p>`}
+    </div>
+  `;
 }
 
+let CURRENT_MARKET_CITY = "Warszawa";
+
 async function vMarket(A) {
-  const m = await api("/api/market"); const o = await api("/api/market/orders/mine");
-  A.innerHTML = `<div class="card"><h2>${ic('chart')} ${t("nav_market")} <span class="live">● LIVE</span></h2><div class="tscroll"><table><tr><th>Item</th><th>Price</th><th>Supply</th><th>Demand</th><th>Qty</th><th></th></tr>
-  ${m.items.map(i => `<tr><td><b>${i.id}</b></td><td>${i.price}</td><td>${Math.round(i.supply)}</td><td>${Math.round(i.demand)}</td><td><input id="m-${i.id}" type="number" value="10" style="max-width:80px"></td><td><button class="btn sm" data-buy="${i.id}">${t("buy")}</button> <button class="btn sm g" data-sell="${i.id}">${t("sell")}</button> <button class="btn sm g" data-h="${i.id}">Chart</button></td></tr>`).join("")}</table></div><canvas id="mh"></canvas></div>
-  <div class="card"><h3>Limit orders</h3><div class="row"><input id="o1" placeholder="item" style="max-width:120px"><select id="o2" style="max-width:100px"><option>BUY</option><option>SELL</option></select><input id="o3" type="number" placeholder="qty" style="max-width:90px"><input id="o4" type="number" placeholder="price" style="max-width:90px"><button class="btn sm" id="o5">Place</button></div>
-  ${o.orders.map(x => `<span class="tag">${x.side} ${x.qty} ${x.item} @ ${x.price} [${x.status}]</span>`).join("")}</div>`;
-  A.querySelectorAll("[data-buy]").forEach(x => x.onclick = async () => { try { await api("/api/market/buy", { method: "POST", body: JSON.stringify({ item_id: x.dataset.buy, qty: +$("#m-" + x.dataset.buy).value }) }); render(); } catch (e) { toast(e.message, false); } });
-  A.querySelectorAll("[data-sell]").forEach(x => x.onclick = async () => { try { await api("/api/market/sell", { method: "POST", body: JSON.stringify({ item_id: x.dataset.sell, qty: +$("#m-" + x.dataset.sell).value }) }); render(); } catch (e) { toast(e.message, false); } });
-  A.querySelectorAll("[data-h]").forEach(x => x.onclick = async () => { const h = await api("/api/market/" + x.dataset.h); chart("mh", h.prices, "#d49547"); });
-  $("#o5").onclick = async () => { try { await api("/api/market/orders", { method: "POST", body: JSON.stringify({ item_id: $("#o1").value, side: $("#o2").value, qty: +$("#o3").value, price: +$("#o4").value }) }); render(); } catch (e) { toast(e.message, false); } };
+  const isPl = LANG === "pl";
+  const m = await api("/api/market?city=" + encodeURIComponent(CURRENT_MARKET_CITY));
+  const o = await api("/api/market/orders/mine");
+  const arb = await api("/api/market/arbitrage").catch(() => ({ opportunities: [] }));
+
+  A.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between;flex-wrap:wrap">
+        <h2>${ic('chart')} ${t("nav_market")} <span class="live">● ${isPl ? "WSPÓLNY RYNEK GLOBALNY" : "GLOBAL SINGLE WORLD"}</span></h2>
+        <div class="row" style="align-items:center">
+          <span class="mut">${isPl ? "Lokalizacja:" : "City Market:"}</span>
+          <select id="mCitySelect" style="font-weight:600">
+            ${(m.cities || []).map(c => `<option value="${c}" ${c === m.city ? "selected" : ""}>${c}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+
+      <!-- Arbitrage Scanner -->
+      <div style="margin:16px 0;padding:14px;background:var(--card-bg);border:1px solid var(--line);border-radius:10px">
+        <h3 style="margin-top:0;font-size:15px;color:var(--acc)">${ic('bolt')} ${isPl ? "Skaner Arbitrażu Międzymiastowego (Top Okazje Handlowe)" : "Inter-City Arbitrage Scanner (Top Spreads)"}</h3>
+        <p class="mut" style="font-size:12px;margin:0 0 10px">${isPl ? "Kupuj taniej w miastach wydobywczych, transportuj i sprzedawaj w metropoliach o wysokim popycie." : "Buy low in producer cities, ship via logistics fleet, sell high in consumer capitals."}</p>
+        ${(arb.opportunities || []).slice(0, 3).map(op => `
+          <div class="arbitrage-card">
+            <div class="arbitrage-route">
+              <span><b>${op.item.toUpperCase()}</b>:</span>
+              <span class="tag">${op.buy_city} (${op.buy_price} $)</span>
+              <span>→</span>
+              <span class="tag live">${op.sell_city} (${op.sell_price} $)</span>
+            </div>
+            <div class="row">
+              <span style="color:var(--grn);font-weight:700">+${op.spread} $ (+${op.profit_pct}%)</span>
+              <button class="btn sm" data-arb-buy="${op.item}" data-arb-city="${op.buy_city}">${isPl ? "Kup w" : "Buy in"} ${op.buy_city}</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+
+      <div class="tscroll">
+        <table>
+          <tr><th>${isPl ? "Towar" : "Item"}</th><th>${isPl ? "Cena regionalna" : "Local Price"}</th><th>${isPl ? "Podaż" : "Supply"}</th><th>${isPl ? "Popyt" : "Demand"}</th><th>${isPl ? "Ilość" : "Qty"}</th><th>${isPl ? "Akcje" : "Actions"}</th></tr>
+          ${m.items.map(i => `
+            <tr>
+              <td><b>${i.id}</b></td>
+              <td><b style="color:var(--acc)">${i.price} $</b> <small class="mut">(${i.base_price}$)</small></td>
+              <td>${Math.round(i.supply)}</td>
+              <td>${Math.round(i.demand)}</td>
+              <td><input id="m-${i.id}" type="number" value="10" style="max-width:70px"></td>
+              <td>
+                <button class="btn sm" data-buy="${i.id}">${t("buy")}</button>
+                <button class="btn sm g" data-sell="${i.id}">${t("sell")}</button>
+                <button class="btn sm g" data-h="${i.id}">Wykres</button>
+              </td>
+            </tr>
+          `).join("")}
+        </table>
+      </div>
+      <canvas id="mh" style="margin-top:14px"></canvas>
+    </div>
+
+    <div class="card">
+      <h3>${ic('doc')} ${isPl ? "Moje Zlecenia Limit (Książka Zleceń)" : "My Limit Orders"}</h3>
+      <div class="row">
+        <input id="o1" placeholder="towar (np. iron)" style="max-width:120px">
+        <select id="o2" style="max-width:90px"><option>BUY</option><option>SELL</option></select>
+        <input id="o3" type="number" placeholder="ilość" style="max-width:90px">
+        <input id="o4" type="number" placeholder="cena max/min" style="max-width:110px">
+        <button class="btn sm" id="o5">${isPl ? "Wystaw Zlecenie" : "Place Order"}</button>
+      </div>
+      <div style="margin-top:10px">
+        ${o.orders.map(x => `<span class="tag">${x.side} ${x.qty}x ${x.item} @ ${x.price} $ [${x.status}]</span>`).join("") || `<span class="mut">${isPl ? "Brak otwartych zleceń." : "No open limit orders."}</span>`}
+      </div>
+    </div>
+  `;
+
+  $("#mCitySelect").onchange = () => {
+    CURRENT_MARKET_CITY = $("#mCitySelect").value;
+    vMarket(A);
+  };
+
+  A.querySelectorAll("[data-buy]").forEach(x => x.onclick = async () => {
+    try {
+      await api("/api/market/buy", { method: "POST", body: JSON.stringify({ item_id: x.dataset.buy, qty: +$("#m-" + x.dataset.buy).value, city: CURRENT_MARKET_CITY }) });
+      toast(isPl ? `Kupiono w mieście ${CURRENT_MARKET_CITY}!` : `Purchased in ${CURRENT_MARKET_CITY}!`, true);
+      vMarket(A);
+    } catch (e) { toast(e.message, false); }
+  });
+
+  A.querySelectorAll("[data-sell]").forEach(x => x.onclick = async () => {
+    try {
+      await api("/api/market/sell", { method: "POST", body: JSON.stringify({ item_id: x.dataset.sell, qty: +$("#m-" + x.dataset.sell).value, city: CURRENT_MARKET_CITY }) });
+      toast(isPl ? `Sprzedano w mieście ${CURRENT_MARKET_CITY}!` : `Sold in ${CURRENT_MARKET_CITY}!`, true);
+      vMarket(A);
+    } catch (e) { toast(e.message, false); }
+  });
+
+  A.querySelectorAll("[data-arb-buy]").forEach(x => x.onclick = () => {
+    CURRENT_MARKET_CITY = x.dataset.arbCity;
+    vMarket(A);
+  });
+
+  A.querySelectorAll("[data-h]").forEach(x => x.onclick = async () => {
+    const h = await api("/api/market/" + x.dataset.h);
+    chart("mh", h.prices, "#d49547");
+  });
+
+  $("#o5").onclick = async () => {
+    try {
+      await api("/api/market/orders", { method: "POST", body: JSON.stringify({ item_id: $("#o1").value, side: $("#o2").value, qty: +$("#o3").value, price: +$("#o4").value, city: CURRENT_MARKET_CITY }) });
+      toast(isPl ? "Wystawiono zlecenie!" : "Order placed!", true);
+      vMarket(A);
+    } catch (e) { toast(e.message, false); }
+  };
 }
 
 async function vLog(A) {
+  const isPl = LANG === "pl";
   const l = await api("/api/logistics");
-  A.innerHTML = `<div class="card"><h2>${ic('truck')} ${t("nav_logistics")}</h2><div class="row"><select id="v" style="max-width:120px">${Object.keys(l.vehicles).map(v => `<option>${v}</option>`).join("")}</select><input id="i" placeholder="item" style="max-width:110px"><input id="q" type="number" value="10" style="max-width:80px"><input id="d" placeholder="dest city" style="max-width:130px"><button class="btn sm" id="s">Ship</button></div>
-  ${l.shipments.map(s => `<span class="tag">${s.qty}x ${s.item} → ${s.dest} (${s.done ? "done" : s.arrive})</span>`).join("")}</div>`;
-  $("#s").onclick = async () => { try { await api("/api/logistics/ship", { method: "POST", body: JSON.stringify({ vehicle: $("#v").value, item_id: $("#i").value, qty: +$("#q").value, dest: $("#d").value }) }); render(); } catch (e) { toast(e.message, false); } };
-}
 
-async function vCont(A) {
-  const c = await api("/api/contracts");
-  const open = c.contracts.filter(x => x.status === "open");
-  const mine = c.contracts.filter(x => x.mine_taker && (x.status === "taken" || x.status === "failed"));
-  const out = c.contracts.filter(x => x.mine_giver);
-  const done = c.contracts.filter(x => ["done", "closed", "cancelled"].includes(x.status) && (x.mine_taker || x.mine_giver));
-  const row = x => `<div class="card">${ic('doc')} <b>${esc(x.title)}</b> - ${x.qty}x ${esc(x.item)} → ${x.reward}$ <span class="tag">${x.status}</span> <span class="tag">od: ${esc(x.giver)}</span><small class="mut">deadline: ${esc(x.deadline.slice(0, 10))}</small><div class="row">`
-    + (x.status === "open" ? `<button class="btn sm" data-t="${x.id}">Przyjmij</button>` : "")
-    + (x.mine_taker && x.status === "taken" ? `<button class="btn sm" data-f="${x.id}">Wykonaj</button><button class="btn sm g" data-d="${x.id}">Odrzuć</button>` : "")
-    + (x.mine_giver && x.status === "failed" ? `<button class="btn sm r" data-s="${x.id}">Pozwij do sądu</button>` : "")
-    + `</div></div>`;
-  A.innerHTML = `<div class="card"><h2>${ic('doc')} ${t("nav_contracts")}</h2>
-    <div class="card"><h3>${ic('users')} Kontrakt z graczem</h3><div class="row">
-    <input id="pTitle" placeholder="Tytuł umowy" style="max-width:160px"><input id="pTo" placeholder="Nick gracza" style="max-width:130px">
-    <input id="pItem" placeholder="towar" style="max-width:100px"><input id="pQty" type="number" value="10" min="1" style="max-width:70px">
-    <input id="pRew" type="number" value="500" min="1" style="max-width:90px"><button class="btn sm" id="pGo">Zaproponuj</button></div>
-    <p class="mut">Nagroda blokowana z góry (escrow). Niewywiązanie się = kara + pozew do sądu.</p></div>
-    <h3>Otwarte (NPC)</h3>${open.map(row).join("") || "<p class='mut'>-</p>"}
-    <h3>Moje do wykonania</h3>${mine.map(row).join("") || "<p class='mut'>-</p>"}
-    <h3>Moje zlecenia</h3>${out.map(row).join("") || "<p class='mut'>-</p>"}
-    <h3>Historia</h3>${done.map(row).join("") || "<p class='mut'>-</p>"}</div>`;
-  $("#pGo").onclick = async () => {
-    const b = { title: $("#pTitle").value.trim(), to_user: $("#pTo").value.trim(), item_id: $("#pItem").value.trim(), qty: +$("#pQty").value, reward: +$("#pRew").value };
-    if (b.title.length < 3) return toast("Tytuł: min. 3 znaki.", false);
-    if (!b.to_user) return toast("Podaj nick gracza.", false);
-    if (!b.item_id) return toast("Podaj towar.", false);
-    try { await api("/api/contracts/p2p", { method: "POST", body: JSON.stringify(b) }); toast("Kontrakt wysłany.", true); render(); } catch (e) { toast(e.message, false); }
+  A.innerHTML = `
+    <div class="card">
+      <h2>${ic('truck')} ${t("nav_logistics")} - ${isPl ? "Centrum Spedycji i Sieć Magazynów" : "Freight Hub & Warehousing"}</h2>
+      <p class="mut">${isPl ? "Organizuj przewozy towarów pomiędzy własnymi magazynami, by zaopatrywać fabryki lub sprzedawać drożej na innych rynkach." : "Dispatch freight between your regional warehouses to supply factories or exploit regional price spreads."}</p>
+
+      <!-- Multi-city Warehouses -->
+      <h3>${ic('home')} ${isPl ? "Twoje Magazyny Regionalne" : "Regional Warehouses"}</h3>
+      <div class="wh-grid">
+        ${(l.warehouses || []).map(w => `
+          <div class="wh-card">
+            <div class="row" style="justify-content:space-between">
+              <b>${w.city}</b>
+              <span class="tag">Lvl ${w.level}</span>
+            </div>
+            <div class="prog-wrap">
+              <div class="prog-bar" style="width:${Math.min(100, Math.round((w.used / w.capacity) * 100))}%"></div>
+            </div>
+            <div class="row" style="justify-content:space-between;font-size:12px;margin-bottom:8px">
+              <span class="mut">${isPl ? "Zajętość:" : "Used:"} ${w.used} / ${w.capacity} j.</span>
+              <button class="btn sm g" data-up-wh="${w.city}">+5000 j. (${w.level * 15000} $)</button>
+            </div>
+            <div style="font-size:12px">
+              ${(w.items || []).map(it => `<span class="tag">${it.id}: ${it.qty}</span>`).join(" ") || `<span class="mut">${isPl ? "Pusto" : "Empty"}</span>`}
+            </div>
+          </div>
+        `).join("")}
+
+        <!-- Build new warehouse card -->
+        <div class="wh-card" style="border-style:dashed;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px;text-align:center">
+          <b>${isPl ? "Otwórz Magazyn w Innym Mieście" : "Open Warehouse in Another City"}</b>
+          <p class="mut" style="font-size:12px;margin:6px 0 12px">${isPl ? "Koszt: 10 000 $ (Pojemność 5000 j.)" : "Cost: $10,000 (Cap 5,000 u.)"}</p>
+          <div class="row">
+            <select id="newWhCity" style="max-width:140px">
+              ${(l.cities || []).filter(c => !(l.warehouses || []).some(w => w.city === c)).map(c => `<option value="${c}">${c}</option>`).join("")}
+            </select>
+            <button class="btn sm" id="btnBuildWh">${isPl ? "Zbuduj" : "Build"}</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fleet Dispatcher -->
+      <h3 style="margin-top:24px">${ic('truck')} ${isPl ? "Dyspozytornia Floty Transportowej" : "Fleet Dispatch Center"}</h3>
+      <div style="background:var(--card-bg);border:1px solid var(--line);border-radius:10px;padding:16px">
+        <div class="row" style="flex-wrap:wrap;gap:12px">
+          <div>
+            <label class="mut" style="font-size:12px">${isPl ? "Skąd (Magazyn):" : "Origin:"}</label>
+            <select id="sOrigin" style="width:140px">
+              ${(l.warehouses || []).map(w => `<option value="${w.city}">${w.city}</option>`).join("")}
+            </select>
+          </div>
+          <div>
+            <label class="mut" style="font-size:12px">${isPl ? "Dokąd (Cel):" : "Destination:"}</label>
+            <select id="sDest" style="width:140px">
+              ${(l.cities || []).map(c => `<option value="${c}">${c}</option>`).join("")}
+            </select>
+          </div>
+          <div>
+            <label class="mut" style="font-size:12px">${isPl ? "Pojazd:" : "Vehicle:"}</label>
+            <select id="sVeh" style="width:180px">
+              ${Object.entries(l.vehicles || {}).map(([k, v]) => `<option value="${k}">${v.name || k} (${v.cap} j.)</option>`).join("")}
+            </select>
+          </div>
+          <div>
+            <label class="mut" style="font-size:12px">${isPl ? "Towar:" : "Cargo Item:"}</label>
+            <input id="sItem" placeholder="iron, coal, steel..." style="width:130px" value="iron">
+          </div>
+          <div>
+            <label class="mut" style="font-size:12px">${isPl ? "Ilość:" : "Quantity:"}</label>
+            <input id="sQty" type="number" value="50" style="width:80px">
+          </div>
+        </div>
+
+        <div id="routeQuoteBox" style="margin-top:14px;padding:10px;background:var(--panel);border-radius:6px;font-size:13px" class="row">
+          <span>${ic('map')} ${isPl ? "Wybierz trasę, aby sprawdzić kalkulację..." : "Select route for quote..."}</span>
+        </div>
+
+        <div class="row" style="justify-content:flex-end;margin-top:14px">
+          <button class="btn" id="btnDispatchShipment">${ic('truck')} ${isPl ? "Zatwierdź i Wyślij Transport" : "Dispatch Shipment"}</button>
+        </div>
+      </div>
+
+      <!-- Active Shipments -->
+      <h3 style="margin-top:24px">${ic('bolt')} ${isPl ? "Aktywne Przewozy w Trasie" : "Shipments En Route"}</h3>
+      <div>
+        ${(l.shipments || []).map(s => `
+          <div class="card" style="margin-bottom:8px">
+            <div class="row" style="justify-content:space-between">
+              <div>
+                <b>${s.v}</b>: ${s.qty}x <b>${s.item}</b>
+                <span class="tag">${s.origin} → ${s.dest}</span>
+                <small class="mut">(${s.distance_km || 0} km, koszt: ${s.cost || 0} $)</small>
+              </div>
+              <span class="tag ${s.done ? "" : "live"}">${s.done ? (isPl ? "Dostarczono" : "Delivered") : `${isPl ? "W trasie - przybycie:" : "Arrives:"} ${s.arrive.slice(11, 16)}`}</span>
+            </div>
+          </div>
+        `).join("") || `<p class="mut">${isPl ? "Brak przesyłek w drodze." : "No shipments currently en route."}</p>`}
+      </div>
+    </div>
+  `;
+
+  // Dynamic Quote Update
+  const updateQuote = async () => {
+    const origin = $("#sOrigin").value;
+    const dest = $("#sDest").value;
+    const veh = $("#sVeh").value;
+    const qty = +$("#sQty").value || 10;
+    if (origin === dest) {
+      $("#routeQuoteBox").innerHTML = `<span style="color:var(--red)">${isPl ? "Wybierz różne miasta!" : "Choose different cities!"}</span>`;
+      return;
+    }
+    try {
+      const q = await api(`/api/logistics/quote?origin=${encodeURIComponent(origin)}&dest=${encodeURIComponent(dest)}&vehicle=${encodeURIComponent(veh)}&qty=${qty}`);
+      $("#routeQuoteBox").innerHTML = `
+        <span>${ic('map')} ${isPl ? "Dystans:" : "Distance:"} <b>${q.distance_km} km</b></span>
+        <span>${ic('gear')} ${isPl ? "Czas przejazdu:" : "Duration:"} <b>${q.travel_minutes} min</b></span>
+        <span>${ic('coins')} ${isPl ? "Koszt frachtu:" : "Cost:"} <b style="color:var(--acc)">${q.cost} $</b></span>
+        ${q.sector_discount ? `<span class="tag live">${isPl ? "Bonus Branży: -35%" : "Logistics Perk: -35%"}</span>` : ""}
+      `;
+    } catch (e) {}
   };
-  A.querySelectorAll("[data-t]").forEach(x => x.onclick = async () => { try { await api(`/api/contracts/${x.dataset.t}/take`, { method: "POST" }); toast("Przyjęto.", true); render(); } catch (e) { toast(e.message, false); } });
-  A.querySelectorAll("[data-f]").forEach(x => x.onclick = async () => { try { const j = await api(`/api/contracts/${x.dataset.f}/fulfill`, { method: "POST" }); toast("Nagroda: " + j.reward + " $", true); render(); } catch (e) { toast(e.message, false); } });
-  A.querySelectorAll("[data-d]").forEach(x => x.onclick = async () => { try { await api(`/api/contracts/${x.dataset.d}/decline`, { method: "POST" }); toast("Odrzucono (escrow zwrócony).", true); render(); } catch (e) { toast(e.message, false); } });
-  A.querySelectorAll("[data-s]").forEach(x => x.onclick = async () => { try { const j = await api(`/api/contracts/${x.dataset.s}/sue`, { method: "POST" }); toast(`Wyrok: winny. Zasądzono ${j.awarded} $ (żądano ${j.claimed} $).`, true); render(); } catch (e) { toast(e.message, false); } });
+
+  $("#sOrigin").onchange = updateQuote;
+  $("#sDest").onchange = updateQuote;
+  $("#sVeh").onchange = updateQuote;
+  $("#sQty").oninput = updateQuote;
+  updateQuote();
+
+  $("#btnDispatchShipment").onclick = async () => {
+    const b = {
+      vehicle: $("#sVeh").value,
+      item_id: $("#sItem").value.trim().toLowerCase(),
+      qty: +$("#sQty").value,
+      origin: $("#sOrigin").value,
+      dest: $("#sDest").value
+    };
+    if (!b.item_id) return toast(isPl ? "Podaj towar!" : "Enter item!", false);
+    try {
+      await api("/api/logistics/ship", { method: "POST", body: JSON.stringify(b) });
+      toast(isPl ? "Transport wysłany w trasę!" : "Shipment dispatched!", true);
+      vLog(A);
+    } catch (e) { toast(e.message, false); }
+  };
+
+  $("#btnBuildWh").onclick = async () => {
+    const city = $("#newWhCity").value;
+    if (!city) return;
+    try {
+      await api("/api/logistics/warehouse/build", { method: "POST", body: JSON.stringify({ city }) });
+      toast(isPl ? `Otwarto nowy magazyn w ${city}!` : `Opened warehouse in ${city}!`, true);
+      vLog(A);
+    } catch (e) { toast(e.message, false); }
+  };
+
+  A.querySelectorAll("[data-up-wh]").forEach(x => x.onclick = async () => {
+    try {
+      await api("/api/logistics/warehouse/build", { method: "POST", body: JSON.stringify({ city: x.dataset.upWh }) });
+      toast(isPl ? `Rozbudowano magazyn w ${x.dataset.upWh}!` : `Upgraded warehouse in ${x.dataset.upWh}!`, true);
+      vLog(A);
+    } catch (e) { toast(e.message, false); }
+  });
 }
 
 async function vInvest(A) {
+  const isPl = LANG === "pl";
   const j = await api("/api/investments");
-  A.innerHTML = `<div class="card"><h2>${ic('coins')} ${t("nav_investments")}</h2><table>${Object.entries(j.stocks).map(([k, v]) => `<tr><td><b>${k}</b></td><td>${v}</td><td><input id="q-${k}" type="number" value="1" style="max-width:70px"></td><td><button class="btn sm" data-b="${k}">${t("buy")}</button><button class="btn sm g" data-s="${k}">${t("sell")}</button></td></tr>`).join("")}</table></div>
-  <div class="card"><h3>Mine</h3>${j.mine.map(m => `<span class="tag">${m.s}: ${m.qty}</span>`).join("") || "-"}</div>`;
-  A.querySelectorAll("[data-b]").forEach(x => x.onclick = async () => { try { await api("/api/investments/buy", { method: "POST", body: JSON.stringify({ symbol: x.dataset.b, qty: +$("#q-" + x.dataset.b).value }) }); render(); } catch (e) { toast(e.message, false); } });
-  A.querySelectorAll("[data-s]").forEach(x => x.onclick = async () => { try { await api("/api/investments/sell", { method: "POST", body: JSON.stringify({ symbol: x.dataset.s, qty: +$("#q-" + x.dataset.s).value }) }); render(); } catch (e) { toast(e.message, false); } });
-}
+  const rx = j.rootx_spotlight || {};
 
-async function vBank(A) {
-  const b = await api("/api/bank");
-  A.innerHTML = `<div class="card"><h2>${ic('bank')} ${t("nav_bank")}</h2><div class="row"><input id="la" type="number" value="5000" style="max-width:130px"><button class="btn sm" id="lb">Take loan</button><input id="da" type="number" value="2000" style="max-width:130px"><button class="btn sm g" id="db">Deposit</button></div>
-  <h3>Loans</h3>${b.loans.map(l => `<span class="tag">#${l.id} left ${Math.round(l.left)} <button class="btn sm g" data-p="${l.id}">Pay</button></span>`).join("") || "-"}
-  <h3>Deposits</h3>${b.deposits.map(d => `<span class="tag">#${d.id} ${d.amount} <button class="btn sm g" data-c="${d.id}">Close</button></span>`).join("") || "-"}</div>`;
-  $("#lb").onclick = async () => { try { await api("/api/bank/loan", { method: "POST", body: JSON.stringify({ amount: +$("#la").value }) }); render(); } catch (e) { toast(e.message, false); } };
-  $("#db").onclick = async () => { try { await api("/api/bank/deposit", { method: "POST", body: JSON.stringify({ amount: +$("#da").value }) }); render(); } catch (e) { toast(e.message, false); } };
-  A.querySelectorAll("[data-p]").forEach(x => x.onclick = async () => { try { await api(`/api/bank/loan/${x.dataset.p}/pay`, { method: "POST" }); render(); } catch (e) { toast(e.message, false); } });
-  A.querySelectorAll("[data-c]").forEach(x => x.onclick = async () => { try { await api(`/api/bank/deposit/${x.dataset.c}/close`, { method: "POST" }); render(); } catch (e) { toast(e.message, false); } });
-}
+  A.innerHTML = `
+    <div class="card">
+      <h2>${ic('coins')} ${t("nav_investments")} - ${isPl ? "Giełda Papierów Wartościowych" : "Stock Exchange"}</h2>
 
-async function vEmp(A) {
-  const e = await api("/api/employees");
-  A.innerHTML = `<div class="card"><h2>${ic('users')} ${t("nav_employees")}</h2><div class="row"><select id="hr" style="max-width:160px">${Object.keys(e.roles).map(r => `<option>${r}</option>`).join("")}</select><button class="btn sm" id="hb">Hire</button></div>
-  ${e.mine.map(m => `<span class="tag">${m.role} $${m.salary}/h</span>`).join("") || "-"}</div>`;
-  $("#hb").onclick = async () => { try { await api("/api/employees/hire", { method: "POST", body: JSON.stringify({ role: $("#hr").value }) }); render(); } catch (e) { toast(e.message, false); } };
-}
+      <!-- RootX Spotlight -->
+      <div class="stock-hero">
+        <div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div>
+            <h3>${ic('bolt')} ${rx.name || "RootX Cyber-Infrastructure Corp."} <span class="tag live">ROOTX</span></h3>
+            <p class="mut" style="font-size:13px;max-width:600px;margin:4px 0 10px">
+              ${isPl ? rx.desc_pl : rx.desc_en}
+            </p>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:26px;font-weight:800;color:var(--acc)">${rx.price || 250.0} $</div>
+            <span class="tag live">${isPl ? "Dywidenda:" : "Dividend:"} ${((rx.dividend_rate || 0.045) * 100).toFixed(1)}% / rok</span>
+          </div>
+        </div>
 
-async function vRes(A) {
-  const r = await api("/api/research");
-  A.innerHTML = `<div class="card"><h2>${ic('flask')} ${t("nav_research")}</h2>${r.branches.map(b => `<p>${b}: lv${r.levels[b] || 0} - cost ${r.cost[b]} <button class="btn sm" data-b="${b}">${t("upgrade")}</button></p>`).join("")}</div>
-  <div class="card"><h2>${ic('home')} Properties</h2><div class="row"><input id="pk" placeholder="land/office/..." style="max-width:130px"><input id="pc" placeholder="city" style="max-width:130px"><button class="btn sm" id="pb">Buy</button></div><div id="pl"></div></div>`;
-  A.querySelectorAll("[data-b]").forEach(x => x.onclick = async () => { try { await api("/api/research/up", { method: "POST", body: JSON.stringify({ branch: x.dataset.b }) }); render(); } catch (e) { toast(e.message, false); } });
-  const p = await api("/api/properties"); $("#pl").innerHTML = p.mine.map(m => `<span class="tag">${m.kind} ${m.city} $${Math.round(m.value)}</span>`).join("") || "-";
-  $("#pb").onclick = async () => { try { await api("/api/properties/buy", { method: "POST", body: JSON.stringify({ kind: $("#pk").value || "land", city: $("#pc").value || "Warszawa" }) }); render(); } catch (e) { toast(e.message, false); } };
+        <div class="hero-stat-grid">
+          <div class="hero-stat">
+            <div class="val">10 000 000</div>
+            <div class="lbl">${isPl ? "Liczba Akcji" : "Shares Issued"}</div>
+          </div>
+          <div class="hero-stat">
+            <div class="val">2.5 MLD $</div>
+            <div class="lbl">${isPl ? "Kapitalizacja" : "Market Cap"}</div>
+          </div>
+          <div class="hero-stat">
+            <div class="val">+18.4%</div>
+            <div class="lbl">${isPl ? "Wzrost (30 dni)" : "30d Return"}</div>
+          </div>
+          <div class="hero-stat">
+            <div class="val">${((rx.dividend_rate || 0.045) * 100).toFixed(1)}%</div>
+            <div class="lbl">${isPl ? "Stopa Dywidendy" : "Dividend Yield"}</div>
+          </div>
+        </div>
+
+        <canvas id="rootxChart" style="height:120px;margin-bottom:14px"></canvas>
+
+        <div class="row" style="align-items:center;background:var(--panel);padding:10px;border-radius:8px">
+          <b>${isPl ? "Handel Akcjami RootX:" : "Trade RootX Shares:"}</b>
+          <input id="rxQty" type="number" value="10" min="1" style="max-width:90px">
+          <button class="btn sm" id="rxBuyBtn">${ic('coins')} ${isPl ? "Kup Akcje ROOTX" : "Buy ROOTX"}</button>
+          <button class="btn sm g" id="rxSellBtn">${isPl ? "Sprzedaj Akcje" : "Sell ROOTX"}</button>
+        </div>
+      </div>
+
+      <!-- Other Corporate Stocks -->
+      <h3>${ic('chart')} ${isPl ? "Pozostałe Spółki Notowane na Giełdzie" : "Other Listed Corporations"}</h3>
+      <div class="tscroll">
+        <table>
+          <tr><th>${isPl ? "Symbol" : "Ticker"}</th><th>${isPl ? "Nazwa Spółki" : "Company"}</th><th>${isPl ? "Cena" : "Price"}</th><th>${isPl ? "Dywidenda" : "Dividend"}</th><th>${isPl ? "Ilość" : "Qty"}</th><th>${isPl ? "Akcje" : "Trade"}</th></tr>
+          ${Object.entries(j.stocks || {}).filter(([s]) => s !== "ROOTX").map(([k, v]) => {
+            const inf = (j.stock_info && j.stock_info[k]) || {};
+            return `
+              <tr>
+                <td><b class="tag">${k}</b></td>
+                <td><b>${inf.name || k}</b><br><small class="mut">${isPl ? inf.desc_pl : inf.desc_en}</small></td>
+                <td><b style="color:var(--acc)">${v} $</b></td>
+                <td>${((inf.dividend_rate || 0.03) * 100).toFixed(1)}%</td>
+                <td><input id="q-${k}" type="number" value="5" style="max-width:70px"></td>
+                <td>
+                  <button class="btn sm" data-b="${k}">${t("buy")}</button>
+                  <button class="btn sm g" data-s="${k}">${t("sell")}</button>
+                </td>
+              </tr>
+            `;
+          }).join("")}
+        </table>
+      </div>
+
+      <!-- My Portfolio -->
+      <h3 style="margin-top:24px">${ic('box')} ${isPl ? "Mój Portfel Akcji i Wycena" : "My Stock Portfolio"}</h3>
+      <div class="tscroll">
+        <table>
+          <tr><th>${isPl ? "Spółka" : "Company"}</th><th>${isPl ? "Posiadane akcje" : "Shares"}</th><th>${isPl ? "Średnia cena zakupu" : "Avg Buy"}</th><th>${isPl ? "Kurs bieżący" : "Current"}</th><th>${isPl ? "Wartość rynkowa" : "Value"}</th><th>${isPl ? "Zysk / Strata" : "Profit/Loss"}</th></tr>
+          ${(j.mine || []).map(m => `
+            <tr>
+              <td><b>${m.name || m.s}</b> <span class="tag">${m.s}</span></td>
+              <td><b>${m.qty}</b></td>
+              <td>${m.avg} $</td>
+              <td>${m.current_price} $</td>
+              <td><b>${m.value} $</b></td>
+              <td style="color:${m.profit >= 0 ? "var(--grn)" : "var(--red)"}"><b>${m.profit >= 0 ? "+" : ""}${m.profit} $ (${m.profit_pct}%)</b></td>
+            </tr>
+          `).join("") || `<tr><td colspan="6" class="mut">${isPl ? "Nie posiadasz jeszcze żadnych akcji w portfelu." : "No shares owned yet."}</td></tr>`}
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Draw RootX chart
+  chart("rootxChart", rx.history || [210, 220, 235, 240, 248, 250], "#d49547");
+
+  // Handlers for RootX
+  $("#rxBuyBtn").onclick = async () => {
+    try {
+      await api("/api/investments/buy", { method: "POST", body: JSON.stringify({ symbol: "ROOTX", qty: +$("#rxQty").value }) });
+      toast(isPl ? "Kupiono akcje RootX!" : "Purchased RootX shares!", true);
+      vInvest(A);
+    } catch (e) { toast(e.message, false); }
+  };
+
+  $("#rxSellBtn").onclick = async () => {
+    try {
+      await api("/api/investments/sell", { method: "POST", body: JSON.stringify({ symbol: "ROOTX", qty: +$("#rxQty").value }) });
+      toast(isPl ? "Sprzedano akcje RootX!" : "Sold RootX shares!", true);
+      vInvest(A);
+    } catch (e) { toast(e.message, false); }
+  };
+
+  // Handlers for other stocks
+  A.querySelectorAll("[data-b]").forEach(x => x.onclick = async () => {
+    try {
+      await api("/api/investments/buy", { method: "POST", body: JSON.stringify({ symbol: x.dataset.b, qty: +$("#q-" + x.dataset.b).value }) });
+      toast(isPl ? `Kupiono akcje ${x.dataset.b}!` : `Purchased ${x.dataset.b} shares!`, true);
+      vInvest(A);
+    } catch (e) { toast(e.message, false); }
+  });
+
+  A.querySelectorAll("[data-s]").forEach(x => x.onclick = async () => {
+    try {
+      await api("/api/investments/sell", { method: "POST", body: JSON.stringify({ symbol: x.dataset.s, qty: +$("#q-" + x.dataset.s).value }) });
+      toast(isPl ? `Sprzedano akcje ${x.dataset.s}!` : `Sold ${x.dataset.s} shares!`, true);
+      vInvest(A);
+    } catch (e) { toast(e.message, false); }
+  });
 }
 
 async function vMap(A) {
+  const isPl = LANG === "pl";
   const m = await api("/api/map");
-  A.innerHTML = `<div class="card"><h2>${ic('map')} ${t("nav_map")}</h2><svg viewBox="0 0 600 220" style="width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px">${m.cities.map((c, i) => `<g data-c="${i}" style="cursor:pointer"><circle cx="${60 + i * 95}" cy="110" r="${14 + c.population / 400000}" fill="var(--acc)" opacity=".7"/><text x="${60 + i * 95}" y="112" text-anchor="middle" font-size="10" fill="var(--btn-txt)">${esc(c.name.slice(0, 3))}</text><text x="${60 + i * 95}" y="150" text-anchor="middle" font-size="11" fill="var(--txt)">${esc(c.name)}</text></g>`).join("")}<path d="M60 110 H555" stroke="var(--line)"/></svg><div class="map">${m.cities.map((c, i) => `<div class="city" data-c="${i}"><b>${esc(c.name)}</b><br>pop ${c.population}<br>demand ${c.demand}<br>wages ${c.wages}<br>tax ${(c.taxes * 100).toFixed(0)}%<br>land ${c.land}</div>`).join("")}</div><div id="ci"></div></div>`;
-  A.querySelectorAll("[data-c]").forEach(x => x.onclick = () => { const c = m.cities[+x.dataset.c]; $("#ci").innerHTML = `<div class="card"><h3>${esc(c.name)}</h3><p>Population ${c.population} · Demand x${c.demand} · Wages ${c.wages} · Taxes ${(c.taxes * 100).toFixed(0)}% · Land ${c.land}$</p></div>`; });
+  const cities = m.cities || [];
+  const myWh = new Set(m.my_warehouses || []);
+  const hq = m.hq || "Warszawa";
+
+  // Render European Trade Network SVG Map
+  A.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>${ic('map')} ${t("nav_map")} - ${isPl ? "Europejska Sieć Handlowa" : "European Trade Network"}</h2>
+        <span class="tag live">${isPl ? "Wspólny Świat (10 Miast)" : "Shared World (10 Cities)"}</span>
+      </div>
+      <p class="mut">${isPl ? "Kliknij wybrane miasto, aby poznać jego profil gospodarczy, specjalizację oraz różnice cenowe surowców." : "Click any city node to inspect economic profile, local specialization, and arbitrage price spreads."}</p>
+
+      <div style="position:relative;width:100%;overflow-x:auto">
+        <svg viewBox="0 0 800 450" style="width:100%;min-width:600px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
+          <!-- Trade Route Corridors -->
+          <line x1="120" y1="240" x2="230" y2="260" stroke="var(--line)" stroke-width="2" stroke-dasharray="4"/>
+          <line x1="180" y1="340" x2="230" y2="260" stroke="var(--line)" stroke-width="2" stroke-dasharray="4"/>
+          <line x1="230" y1="260" x2="310" y2="190" stroke="var(--line)" stroke-width="2"/>
+          <line x1="310" y1="190" x2="360" y2="250" stroke="var(--line)" stroke-width="2"/>
+          <line x1="310" y1="190" x2="490" y2="160" stroke="var(--line)" stroke-width="2" stroke-dasharray="4"/>
+          <line x1="360" y1="250" x2="410" y2="350" stroke="var(--line)" stroke-width="2"/>
+          <line x1="360" y1="250" x2="520" y2="270" stroke="var(--line)" stroke-width="2"/>
+          <line x1="410" y1="350" x2="480" y2="340" stroke="var(--line)" stroke-width="2"/>
+          <line x1="480" y1="340" x2="520" y2="270" stroke="var(--line)" stroke-width="2"/>
+          <line x1="490" y1="160" x2="520" y2="270" stroke="var(--line)" stroke-width="2"/>
+          <line x1="520" y1="270" x2="680" y2="290" stroke="var(--line)" stroke-width="2" stroke-dasharray="4"/>
+
+          <!-- City Nodes -->
+          ${cities.map((c, i) => {
+            const isHq = c.name === hq;
+            const hasWh = myWh.has(c.name);
+            const r = Math.max(12, Math.min(22, 10 + c.population / 400000));
+            return `
+              <g data-city-idx="${i}" style="cursor:pointer">
+                <circle cx="${c.x}" cy="${c.y}" r="${r + 4}" fill="${isHq ? "var(--acc)" : (hasWh ? "var(--grn)" : "var(--line)")}" opacity="0.3"/>
+                <circle cx="${c.x}" cy="${c.y}" r="${r}" fill="${isHq ? "var(--acc)" : (hasWh ? "var(--grn)" : "var(--card-bg)")}" stroke="var(--line)" stroke-width="2"/>
+                <text x="${c.x}" y="${c.y + 4}" text-anchor="middle" font-size="10" font-weight="700" fill="${isHq || hasWh ? "#ffffff" : "var(--txt)"}">${c.country || c.name.slice(0, 2).toUpperCase()}</text>
+                <text x="${c.x}" y="${c.y + r + 14}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--txt)">${esc(c.name)}</text>
+              </g>
+            `;
+          }).join("")}
+        </svg>
+      </div>
+
+      <!-- City Dossier -->
+      <div id="cityDossier" style="margin-top:16px">
+        <div class="card" style="background:var(--card-bg)">
+          <h3>${ic('target')} ${isPl ? "Wybierz miasto na mapie powyżej" : "Click a city on the map above"}</h3>
+          <p class="mut">${isPl ? "Poznaj lokalne mnożniki cen, zapotrzebowanie oraz otwórz magazyn." : "Inspect local price modifiers, demand profiles, and establish warehouses."}</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  A.querySelectorAll("[data-city-idx]").forEach(el => el.onclick = () => {
+    const c = cities[+el.dataset.cityIdx];
+    const isHq = c.name === hq;
+    const hasWh = myWh.has(c.name);
+    const mults = c.price_mults || {};
+
+    $("#cityDossier").innerHTML = `
+      <div class="card" style="background:var(--card-bg);border:1px solid var(--acc)">
+        <div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div>
+            <h3 style="margin:0 0 6px">${ic('home')} ${esc(c.name)} (${c.country || "EU"})</h3>
+            <span class="tag live">${esc(c.specialization || "Przemysł i Handel")}</span>
+            ${isHq ? `<span class="tag" style="background:var(--acc);color:#fff">${isPl ? "Główna Siedziba (HQ)" : "Headquarters"}</span>` : ""}
+            ${hasWh ? `<span class="tag live">${isPl ? "Twój Magazyn" : "Your Warehouse"}</span>` : ""}
+          </div>
+          <div class="row">
+            <button class="btn sm" id="btnGoMarketCity">${ic('chart')} ${isPl ? "Handel w" : "Trade in"} ${c.name}</button>
+            ${!hasWh ? `<button class="btn sm g" id="btnBuildWhCity">${ic('home')} ${isPl ? "Zbuduj Magazyn (10k $)" : "Build Warehouse ($10k)"}</button>` : ""}
+          </div>
+        </div>
+
+        <div class="hero-stat-grid" style="margin-top:14px">
+          <div class="hero-stat">
+            <div class="val">${(c.population / 1000000).toFixed(1)} M</div>
+            <div class="lbl">${isPl ? "Ludność" : "Population"}</div>
+          </div>
+          <div class="hero-stat">
+            <div class="val">x${c.demand}</div>
+            <div class="lbl">${isPl ? "Mnożnik Popytu" : "Demand Mult"}</div>
+          </div>
+          <div class="hero-stat">
+            <div class="val">${(c.taxes * 100).toFixed(0)}%</div>
+            <div class="lbl">${isPl ? "Podatek Lokalny" : "Local Tax"}</div>
+          </div>
+          <div class="hero-stat">
+            <div class="val">${c.wages} $/h</div>
+            <div class="lbl">${isPl ? "Płace" : "Wages"}</div>
+          </div>
+        </div>
+
+        <h4 style="margin:14px 0 6px">${isPl ? "Wyróżniające się ceny surowców w tym mieście:" : "Local commodity price advantages:"}</h4>
+        <div class="row" style="flex-wrap:wrap">
+          ${Object.entries(mults).map(([item, mlt]) => `
+            <span class="tag ${mlt < 0.9 ? "live" : (mlt > 1.1 ? "" : "")}">
+              ${item}: <b>x${mlt}</b> ${mlt < 0.9 ? (isPl ? "(Tani zakup!)" : "(Cheap buy!)") : (mlt > 1.15 ? (isPl ? "(Droga sprzedaż!)" : "(High demand!)") : "")}
+            </span>
+          `).join("") || `<span class="mut">${isPl ? "Ceny standardowe" : "Standard prices"}</span>`}
+        </div>
+      </div>
+    `;
+
+    const btnM = $("#btnGoMarketCity");
+    if (btnM) btnM.onclick = () => {
+      CURRENT_MARKET_CITY = c.name;
+      go("market");
+    };
+
+    const btnB = $("#btnBuildWhCity");
+    if (btnB) btnB.onclick = async () => {
+      try {
+        await api("/api/logistics/warehouse/build", { method: "POST", body: JSON.stringify({ city: c.name }) });
+        toast(isPl ? `Zbudowano magazyn w ${c.name}!` : `Warehouse built in ${c.name}!`, true);
+        vMap(A);
+      } catch (e) { toast(e.message, false); }
+    };
+  });
 }
 
 async function vNews(A) {
@@ -957,8 +1489,28 @@ async function vNews(A) {
 }
 
 async function vRank(A) {
+  const isPl = LANG === "pl";
   const r = await api("/api/rankings");
-  A.innerHTML = `<div class="card"><h2>${ic('trophy')} ${t("nav_rankings")}</h2><table>${r.by_value.map((c, i) => `<tr><td>${i + 1}</td><td><b>${esc(c.name)}</b></td><td>${Math.round(c.value)}</td><td>lv${c.level}</td></tr>`).join("")}</table></div>`;
+  A.innerHTML = `
+    <div class="card">
+      <h2>${ic('trophy')} ${t("nav_rankings")} - ${isPl ? "Ranking Globalny Magnatów" : "Global Tycoon Leaderboard"}</h2>
+      <div class="tscroll">
+        <table>
+          <tr><th>#</th><th>${isPl ? "Firma" : "Company"}</th><th>${isPl ? "Sektor" : "Sector"}</th><th>${isPl ? "Centrala" : "City"}</th><th>${isPl ? "Wartość" : "Value"}</th><th>${isPl ? "Poziom" : "Level"}</th></tr>
+          ${r.by_value.map((c, i) => `
+            <tr>
+              <td><b>#${i + 1}</b></td>
+              <td><b>${esc(c.name)}</b></td>
+              <td><span class="tag">${esc(c.sector || "Industry")}</span></td>
+              <td>${esc(c.city || "Warszawa")}</td>
+              <td><b style="color:var(--acc)">${Math.round(c.value).toLocaleString()} $</b></td>
+              <td>lv${c.level}</td>
+            </tr>
+          `).join("")}
+        </table>
+      </div>
+    </div>
+  `;
 }
 
 async function vAch(A) {

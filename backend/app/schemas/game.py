@@ -22,16 +22,19 @@ class StartProduction(BaseModel):
 class MarketTrade(BaseModel):
     item_id: str
     qty: float = Field(gt=0, le=100000)
+    city: str | None = None
 class LimitOrder(BaseModel):
     item_id: str
     side: str
     qty: float = Field(gt=0, le=100000)
     price: float = Field(gt=0)
+    city: str | None = None
 class Ship(BaseModel):
     vehicle: str
     item_id: str
     qty: float = Field(gt=0)
     dest: str
+    origin: str = "Warszawa"
 class Hire(BaseModel):
     role: str
 class Invest(BaseModel):
