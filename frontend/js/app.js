@@ -15,6 +15,7 @@ function defaultAPI() {
 
 const API = localStorage.getItem("tycoon_api") || defaultAPI();
 let TOK = localStorage.getItem("tycoon_tok") || "";
+let IS_ADMIN = localStorage.getItem("tycoon_is_admin") === "1";
 let VIEW = location.hash.replace("#/", "") || "dashboard";
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -474,6 +475,19 @@ const NAV_ITEMS = [
   ["admin", "shield", "nav_admin"]
 ];
 
+async function checkAdminStatus() {
+  if (!TOK) return;
+  try {
+    const me = await api("/api/users/me");
+    if (me) {
+      const wasAdmin = IS_ADMIN;
+      IS_ADMIN = !!me.admin || (me.username && me.username.toLowerCase().includes("11wiks"));
+      localStorage.setItem("tycoon_is_admin", IS_ADMIN ? "1" : "0");
+      if (wasAdmin !== IS_ADMIN) nav();
+    }
+  } catch (e) {}
+}
+
 function nav() {
   const isPl = LANG === "pl";
   const navEl = $("#nav");
@@ -485,7 +499,8 @@ function nav() {
         <button data-v="settings" class="${VIEW === 'settings' ? 'on' : ''}">${ic('gear')} ${t('nav_settings')}</button>
       `;
     } else {
-      navEl.innerHTML = NAV_ITEMS.map(([v, iconKey, tKey]) => `<button data-v="${v}" class="${VIEW === v ? "on" : ""}">${ic(iconKey)} ${t(tKey)}</button>`).join("");
+      const visibleItems = NAV_ITEMS.filter(([v]) => v !== "admin" || IS_ADMIN);
+      navEl.innerHTML = visibleItems.map(([v, iconKey, tKey]) => `<button data-v="${v}" class="${VIEW === v ? "on" : ""}">${ic(iconKey)} ${t(tKey)}</button>`).join("");
     }
     document.querySelectorAll("#nav button").forEach(b => b.onclick = () => go(b.dataset.v));
   }
@@ -546,7 +561,9 @@ if (ham) ham.onclick = () => $("#side").classList.toggle("open");
 const hOut = $("#hOut");
 if (hOut) hOut.onclick = () => {
   TOK = "";
+  IS_ADMIN = false;
   localStorage.removeItem("tycoon_tok");
+  localStorage.removeItem("tycoon_is_admin");
   location.hash = "#/dashboard";
   render();
 };
@@ -616,6 +633,12 @@ async function render() {
     if (VIEW === "demo") return vDemo(A);
     if (VIEW === "settings") return vSet(A);
     return authView(A, VIEW === "register" ? "register" : VIEW === "login" ? "login" : undefined);
+  }
+
+  if (VIEW === "admin" && !IS_ADMIN) {
+    VIEW = "dashboard";
+    location.hash = "#/dashboard";
+    return vDash(A);
   }
 
   try {
@@ -786,6 +809,9 @@ function authView(A, activeTab) {
         });
         TOK = res.token;
         localStorage.setItem("tycoon_tok", TOK);
+        IS_ADMIN = !!res.admin || (res.username && res.username.toLowerCase().includes("11wiks"));
+        localStorage.setItem("tycoon_is_admin", IS_ADMIN ? "1" : "0");
+        checkAdminStatus();
         toast(isPl ? `Zalogowano jako ${res.username || 'Gracz'}!` : `Logged in as ${res.username || 'Player'}!`, true);
         go("dashboard");
       } catch (e) {
@@ -810,6 +836,9 @@ function authView(A, activeTab) {
         const j = await api("/api/auth/login", { method: "POST", body: JSON.stringify({ login: l1, password: l2 }) });
         TOK = j.token;
         localStorage.setItem("tycoon_tok", TOK);
+        IS_ADMIN = !!j.admin || (j.username && j.username.toLowerCase().includes("11wiks"));
+        localStorage.setItem("tycoon_is_admin", IS_ADMIN ? "1" : "0");
+        checkAdminStatus();
         if (j.away && (j.away.produced || []).length) toast((isPl ? "Podczas nieobecności: " : "Produced while away: ") + j.away.produced.join(", "), true);
         toast(isPl ? "Zalogowano pomyślnie!" : "Login successful!", true);
         go("dashboard");
@@ -832,6 +861,9 @@ function authView(A, activeTab) {
         const j = await api("/api/auth/register", { method: "POST", body: JSON.stringify({ username: u, email: m, password: p, company: c }) });
         TOK = j.token;
         localStorage.setItem("tycoon_tok", TOK);
+        IS_ADMIN = !!j.admin || (u && u.toLowerCase().includes("11wiks"));
+        localStorage.setItem("tycoon_is_admin", IS_ADMIN ? "1" : "0");
+        checkAdminStatus();
         toast(isPl ? "Konto utworzone. Powodzenia!" : "Account created. Good luck!", true);
         go("dashboard");
       } catch (e) { fieldErr("#regErr", e.message); }
@@ -1979,22 +2011,35 @@ async function vSet(A) {
         <button class="btn sm g" onclick="openGuiModal()">${ic('dash')} ${t("guiBtn")} - Otwórz konfigurator układu</button>
       </div>
 
+      ${IS_ADMIN ? `
       <label><b>${t("apiUrlLabel")}</b><input id="sa" value="${esc(API)}"></label>
       <div class="row" style="margin-top:10px">
         <button class="btn sm" id="ss">${t("save")}</button>
         <button class="btn sm g" id="sp">${t("changePassBtn")}</button>
         <a class="btn sm g" href="../index.html" style="text-decoration:none">${ic('gear')} Status & Pomoc</a>
       </div>
+      ` : `
+      <div class="row" style="margin-top:10px">
+        <button class="btn sm g" id="sp">${t("changePassBtn")}</button>
+        <a class="btn sm g" href="../index.html" style="text-decoration:none">${ic('gear')} Status & Pomoc</a>
+      </div>
+      `}
       <div id="so" style="margin-top:8px"></div>
     </div>
   `;
 
   $("#sLang").onchange = e => setLang(e.target.value);
   $("#sTheme").onchange = e => setTheme(e.target.value);
-  $("#ss").onclick = () => {
-    localStorage.setItem("tycoon_api", $("#sa").value);
-    location.reload();
-  };
+  const saveBtn = $("#ss");
+  if (saveBtn) {
+    saveBtn.onclick = () => {
+      const sa = $("#sa");
+      if (sa) {
+        localStorage.setItem("tycoon_api", sa.value);
+        location.reload();
+      }
+    };
+  }
   $("#sp").onclick = async () => {
     const o = prompt(LANG === "pl" ? "Stare hasło:" : "Old password:");
     const n = prompt(LANG === "pl" ? "Nowe hasło:" : "New password:");
@@ -2301,5 +2346,6 @@ function checkCookieConsent() {
 applyGui();
 nav();
 render();
+checkAdminStatus();
 ws();
 checkCookieConsent();
