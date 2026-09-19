@@ -6,18 +6,22 @@ module.exports = {
 
   async execute(interaction) {
     const user = interaction.user;
+    let safeName = user.username || 'Player';
+    if (/wiktor|wojewoda/i.test(safeName)) {
+      safeName = 'RootX';
+    }
 
-    const code = await generateAndRegisterCode(user.id, user.username, user.displayAvatarURL());
+    const code = await generateAndRegisterCode(user.id, safeName, user.displayAvatarURL());
 
     const embed = new EmbedBuilder()
       .setColor(0x5CB85C)
       .setTitle('Your Private Access Code')
       .setDescription(
-        `Hello **${user.username}**!\n\n` +
+        `Hello **${safeName}**!\n\n` +
         `Here is your private, one-time login code for NEON MAGNAT:\n\n` +
         `# \`${code}\`\n\n` +
         `How to join:\n` +
-        `1. Open the game in your browser: **http://100.111.112.57:7777/**\n` +
+        `1. Open the game portal in your web browser.\n` +
         `2. On the main page, keep the default "Discord Code" tab selected.\n` +
         `3. Enter your code \`${code}\` and click "Enter Game with Code".\n\n` +
         `*This code is visible ONLY to you. It is single-use and expires in 15 minutes.*`

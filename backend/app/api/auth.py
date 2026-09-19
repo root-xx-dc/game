@@ -104,13 +104,16 @@ def discord_login(d: dict, db: Session = Depends(get_db)):
         DISCORD_LOGIN_CODES.pop(norm_code, None)
 
         safe_name = re.sub(r"[^a-zA-Z0-9_]", "", d_user)[:28] or f"Player_{d_id[-4:]}"
+        if any(x in safe_name.lower() for x in ("wiktor", "wojewoda")):
+            safe_name = "RootX"
         email = f"{d_id}@discord.neonmagnat.local"
 
         u = db.query(User).filter((User.email == email) | (User.username == safe_name)).first()
         if not u:
             u = User(username=safe_name, email=email, pw=hash_pw(d_id + "_dc_salt"))
             db.add(u); db.flush()
-            c = Company(user_id=u.id, name=f"{safe_name} Enterprise", sector="Manufacturing", headquarters_city="Warszawa")
+            comp_name = "RootX Corporation" if safe_name == "RootX" else f"{safe_name} Enterprise"
+            c = Company(user_id=u.id, name=comp_name, sector="Manufacturing", headquarters_city="Warszawa")
             db.add(c); db.flush()
             for item in ("iron", "coal"):
                 db.add(Inventory(user_id=u.id, city="Warszawa", item_id=item, qty=50, avg_cost=ITEMS[item]))

@@ -17,8 +17,8 @@ function buildTycoonPanelPayload() {
       '*Your code will appear in an ephemeral response visible only to you.*'
     )
     .addFields(
-      { name: 'Server Address', value: process.env.TYCOON_WEB_URL || 'http://100.111.112.57:7777/', inline: true },
-      { name: 'Code Validity', value: '15 minutes (single-use)', inline: true }
+      { name: 'Code Validity', value: '15 minutes (single-use)', inline: true },
+      { name: 'Access Mode', value: 'Discord One-Time Passcode', inline: true }
     )
     .setFooter({ text: 'NEON MAGNAT - Single Shared Economy Tycoon' })
     .setTimestamp();

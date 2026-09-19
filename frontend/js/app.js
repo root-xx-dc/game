@@ -1315,6 +1315,331 @@ async function vLog(A) {
   });
 }
 
+async function vCont(A) {
+  const isPl = LANG === "pl";
+  const j = await api("/api/contracts");
+  const list = j.contracts || [];
+
+  A.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>${ic('doc')} ${t("nav_contracts")}</h2>
+        <span class="tag live">${isPl ? "Zlecenia i Kontrakty Handlowe" : "Trade Contracts & Orders"}</span>
+      </div>
+      <p class="mut">${isPl ? "Przyjmuj zlecenia dostaw od innych graczy oraz NPC. Dostarcz wymaganą ilość towaru przed upływem terminu, aby odebrać nagrodę." : "Accept supply contracts from other corporations and NPCs. Deliver the required cargo before deadline to receive reward."}</p>
+
+      <div class="tscroll" style="margin-top:14px">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>${isPl ? "Zleceniodawca" : "Issuer"}</th>
+              <th>${isPl ? "Towar" : "Item"}</th>
+              <th>${isPl ? "Ilość" : "Qty"}</th>
+              <th>${isPl ? "Nagroda" : "Reward"}</th>
+              <th>${isPl ? "Kary" : "Penalty"}</th>
+              <th>${isPl ? "Status" : "Status"}</th>
+              <th>${isPl ? "Termin" : "Deadline"}</th>
+              <th>${isPl ? "Akcja" : "Action"}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.length === 0 ? `<tr><td colspan="9" class="mut" style="text-align:center">${isPl ? "Brak aktywnych kontraktów" : "No active contracts"}</td></tr>` : list.map(c => {
+              const statusTag = c.status === "open" ? `<span class="tag live">${isPl ? "Otwarte" : "Open"}</span>` :
+                                c.status === "taken" ? `<span class="tag" style="background:#5865f2;color:#fff">${isPl ? "W realizacji" : "In Progress"}</span>` :
+                                `<span class="tag">${c.status}</span>`;
+              let actBtn = "-";
+              if (c.status === "open" && !c.mine_giver) {
+                actBtn = `<button class="btn sm" data-take-c="${c.id}">${isPl ? "Przyjmij" : "Accept"}</button>`;
+              } else if (c.status === "taken" && c.mine_taker) {
+                actBtn = `<button class="btn sm dc" data-ful-c="${c.id}">${isPl ? "Zrealizuj" : "Fulfill"}</button>`;
+              }
+              const dLine = c.deadline ? new Date(c.deadline).toLocaleString() : "-";
+              return `
+                <tr>
+                  <td><b>#${c.id}</b></td>
+                  <td>${esc(c.giver)} ${c.mine_giver ? `<span class="tag sm">${isPl ? "Ty" : "You"}</span>` : ""}</td>
+                  <td><b>${esc(c.item)}</b></td>
+                  <td>${c.qty.toLocaleString()} j.</td>
+                  <td style="color:var(--grn);font-weight:700">+${c.reward.toLocaleString()} $</td>
+                  <td style="color:var(--red)">-${c.penalty.toLocaleString()} $</td>
+                  <td>${statusTag}</td>
+                  <td style="font-size:12px">${dLine}</td>
+                  <td>${actBtn}</td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  A.querySelectorAll("[data-take-c]").forEach(btn => {
+    btn.onclick = async () => {
+      try {
+        await api(`/api/contracts/${btn.dataset.takeC}/take`, { method: "POST" });
+        toast(isPl ? "Przyjęto kontrakt do realizacji!" : "Contract accepted!", true);
+        vCont(A);
+      } catch (e) { toast(e.message, false); }
+    };
+  });
+
+  A.querySelectorAll("[data-ful-c]").forEach(btn => {
+    btn.onclick = async () => {
+      try {
+        await api(`/api/contracts/${btn.dataset.fulC}/fulfill`, { method: "POST" });
+        toast(isPl ? "Kontrakt zrealizowany! Wypłacono nagrodę." : "Contract fulfilled! Reward paid.", true);
+        vCont(A);
+      } catch (e) { toast(e.message, false); }
+    };
+  });
+}
+
+async function vBank(A) {
+  const isPl = LANG === "pl";
+  const j = await api("/api/bank");
+  const loans = j.loans || [];
+  const deposits = j.deposits || [];
+
+  A.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>${ic('bank')} ${t("nav_bank")}</h2>
+        <span class="tag live">${isPl ? "Bank Handlowy & Lokaty" : "Commercial Bank & Loans"}</span>
+      </div>
+      <p class="mut">${isPl ? "Zarządzaj płynnością finansową: zaciągaj kredyty obrotowe na inwestycje lub zabezpieczaj kapitał na oprocentowanych lokatach terminowych." : "Manage corporate treasury: borrow working capital or open term deposits to earn passive yields."}</p>
+
+      <div class="grid g2" style="margin-top:16px">
+        <!-- Kredyty -->
+        <div class="card" style="margin-bottom:0">
+          <h3>${ic('coins')} ${isPl ? "Kredyty Obrotowe (10% RRSO)" : "Business Loans (10% APR)"}</h3>
+          <p class="mut" style="font-size:13px">${isPl ? "Zaciągnij kredyt na szybki rozwój fabryki lub zakup floty." : "Take a working capital loan for factory or fleet expansion."}</p>
+          <div class="row" style="margin-top:10px">
+            <input id="loanAmtIn" type="number" min="1000" step="1000" value="10000" style="max-width:180px">
+            <button class="btn" id="takeLoanBtn">${isPl ? "Zaciągnij Kredyt" : "Take Loan"}</button>
+          </div>
+
+          <h4 style="margin-top:18px">${isPl ? "Aktywne zobowiązania" : "Active Loans"}</h4>
+          ${loans.length === 0 ? `<p class="mut" style="font-size:13px">${isPl ? "Brak aktywnych kredytów." : "No active loans."}</p>` : `
+            <table style="margin-top:8px">
+              <thead><tr><th>ID</th><th>${isPl ? "Kapitał" : "Principal"}</th><th>${isPl ? "Do spłaty" : "Due"}</th><th>${isPl ? "Akcja" : "Action"}</th></tr></thead>
+              <tbody>
+                ${loans.map(l => `
+                  <tr>
+                    <td>#${l.id}</td>
+                    <td>${l.principal.toLocaleString()} $</td>
+                    <td style="color:var(--red);font-weight:700">${l.left.toLocaleString()} $</td>
+                    <td><button class="btn sm" data-pay-l="${l.id}">${isPl ? "Spłać" : "Repay"}</button></td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `}
+        </div>
+
+        <!-- Lokaty -->
+        <div class="card" style="margin-bottom:0">
+          <h3>${ic('shield')} ${isPl ? "Lokaty Terminowe (4.0% zysku)" : "Term Deposits (4.0% Yield)"}</h3>
+          <p class="mut" style="font-size:13px">${isPl ? "Zdeponuj wolne środki na 3 dni, aby otrzymać gwarantowany zysk kapitałowy." : "Lock corporate cash for 3 days to earn guaranteed interest."}</p>
+          <div class="row" style="margin-top:10px">
+            <input id="depAmtIn" type="number" min="1000" step="1000" value="10000" style="max-width:180px">
+            <button class="btn" id="openDepBtn">${isPl ? "Otwórz Lokatę" : "Open Deposit"}</button>
+          </div>
+
+          <h4 style="margin-top:18px">${isPl ? "Twoje lokaty" : "Active Deposits"}</h4>
+          ${deposits.length === 0 ? `<p class="mut" style="font-size:13px">${isPl ? "Brak aktywnych lokat." : "No active deposits."}</p>` : `
+            <table style="margin-top:8px">
+              <thead><tr><th>ID</th><th>${isPl ? "Depozyt" : "Amount"}</th><th>${isPl ? "Oprocentowanie" : "Rate"}</th><th>${isPl ? "Odblokowanie" : "Unlock"}</th></tr></thead>
+              <tbody>
+                ${deposits.map(d => `
+                  <tr>
+                    <td>#${d.id}</td>
+                    <td style="color:var(--grn);font-weight:700">${d.amount.toLocaleString()} $</td>
+                    <td>+4.0%</td>
+                    <td style="font-size:12px">${new Date(d.unlock).toLocaleString()}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `}
+        </div>
+      </div>
+    </div>
+  `;
+
+  const takeLBtn = $("#takeLoanBtn");
+  if (takeLBtn) takeLBtn.onclick = async () => {
+    const amount = +$("#loanAmtIn").value;
+    if (amount <= 0) return;
+    try {
+      await api("/api/bank/loan", { method: "POST", body: JSON.stringify({ amount }) });
+      toast(isPl ? `Zaciągnięto kredyt: +${amount.toLocaleString()} $` : `Loan granted: +${amount.toLocaleString()} $`, true);
+      vBank(A);
+    } catch (e) { toast(e.message, false); }
+  };
+
+  A.querySelectorAll("[data-pay-l]").forEach(btn => {
+    btn.onclick = async () => {
+      try {
+        await api(`/api/bank/loan/${btn.dataset.payL}/pay`, { method: "POST" });
+        toast(isPl ? "Kredyt spłacony w całości!" : "Loan fully repaid!", true);
+        vBank(A);
+      } catch (e) { toast(e.message, false); }
+    };
+  });
+
+  const openDBtn = $("#openDepBtn");
+  if (openDBtn) openDBtn.onclick = async () => {
+    const amount = +$("#depAmtIn").value;
+    if (amount <= 0) return;
+    try {
+      await api("/api/bank/deposit", { method: "POST", body: JSON.stringify({ amount }) });
+      toast(isPl ? `Otwarto lokatę: ${amount.toLocaleString()} $` : `Deposit opened: ${amount.toLocaleString()} $`, true);
+      vBank(A);
+    } catch (e) { toast(e.message, false); }
+  };
+}
+
+async function vEmp(A) {
+  const isPl = LANG === "pl";
+  const j = await api("/api/employees");
+  const roles = j.roles || {};
+  const mine = j.mine || [];
+
+  A.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>${ic('users')} ${t("nav_employees")}</h2>
+        <span class="tag live">${isPl ? "Kadry i Specjaliści" : "Staff & Human Resources"}</span>
+      </div>
+      <p class="mut">${isPl ? "Zatrudniaj kadrę inżynierską, kierowców spedycji, maklerów oraz zarządców, aby podnosić wydajność fabryk i logistyki." : "Hire engineers, freight drivers, traders and managers to boost production throughput and logistic speed."}</p>
+
+      <div class="grid g2" style="margin-top:16px">
+        <!-- Rekrutacja -->
+        <div class="card" style="margin-bottom:0">
+          <h3>${ic('user')} ${isPl ? "Dostępni specjaliści do zatrudnienia" : "Recruitment Market"}</h3>
+          <table>
+            <thead><tr><th>${isPl ? "Stanowisko" : "Role"}</th><th>${isPl ? "Koszt rekrutacji" : "Hiring Cost"}</th><th>${isPl ? "Pensja/mies." : "Salary/mo"}</th><th></th></tr></thead>
+            <tbody>
+              ${Object.entries(roles).map(([role, cost]) => `
+                <tr>
+                  <td><b>${esc(role)}</b></td>
+                  <td>${cost.toLocaleString()} $</td>
+                  <td class="mut">${(cost / 10).toLocaleString()} $</td>
+                  <td><button class="btn sm" data-hire-r="${esc(role)}">${isPl ? "Zatrudnij" : "Hire"}</button></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Twój zespół -->
+        <div class="card" style="margin-bottom:0">
+          <h3>${ic('users')} ${isPl ? "Twój personel" : "Active Staff"} (${mine.length})</h3>
+          ${mine.length === 0 ? `<p class="mut" style="font-size:13px">${isPl ? "Brak zatrudnionych pracowników." : "No active employees."}</p>` : `
+            <table>
+              <thead><tr><th>ID</th><th>${isPl ? "Rola" : "Role"}</th><th>${isPl ? "Pensja" : "Salary"}</th><th>${isPl ? "Morale" : "Morale"}</th><th></th></tr></thead>
+              <tbody>
+                ${mine.map(e => `
+                  <tr>
+                    <td>#${e.id}</td>
+                    <td><b>${esc(e.role)}</b></td>
+                    <td>${e.salary.toLocaleString()} $</td>
+                    <td><span class="tag live">${e.morale || 100}%</span></td>
+                    <td><button class="btn sm g" data-fire-e="${e.id}">${isPl ? "Zwolnij" : "Fire"}</button></td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `}
+        </div>
+      </div>
+    </div>
+  `;
+
+  A.querySelectorAll("[data-hire-r]").forEach(btn => {
+    btn.onclick = async () => {
+      try {
+        await api("/api/employees/hire", { method: "POST", body: JSON.stringify({ role: btn.dataset.hireR }) });
+        toast(isPl ? `Zatrudniono: ${btn.dataset.hireR}!` : `Hired: ${btn.dataset.hireR}!`, true);
+        vEmp(A);
+      } catch (e) { toast(e.message, false); }
+    };
+  });
+
+  A.querySelectorAll("[data-fire-e]").forEach(btn => {
+    btn.onclick = async () => {
+      try {
+        await api(`/api/employees/${btn.dataset.fireE}/fire`, { method: "POST" });
+        toast(isPl ? "Pracownik został zwolniony." : "Employee dismissed.", true);
+        vEmp(A);
+      } catch (e) { toast(e.message, false); }
+    };
+  });
+}
+
+async function vRes(A) {
+  const isPl = LANG === "pl";
+  const j = await api("/api/research");
+  const branches = j.branches || [];
+  const levels = j.levels || {};
+  const costs = j.cost || {};
+
+  const descs = {
+    Automation: isPl ? "Zwiększa automatyzację fabryk, obniżając koszty utrzymania linii produkcyjnych." : "Increases factory automation, decreasing production line upkeep.",
+    Efficiency: isPl ? "Podnosi wydajność robotników i tempo wytwarzania towarów gotowych." : "Boosts worker throughput and manufacturing turnaround speed.",
+    Logistics: isPl ? "Obniża zużycie paliwa w transporcie między miastami i skraca czas tranzytu." : "Reduces fleet fuel consumption and speeds up freight transit.",
+    Quality: isPl ? "Zwiększa marżę i reputację firmy na rynku hurtowym." : "Increases product quality score and wholesale profit margins.",
+    GreenEnergy: isPl ? "Inwestycje w OZE, dające ulgi podatkowe w miastach i zerowy ślad węglowy." : "Renewable green power investments, unlocking municipal tax credits."
+  };
+
+  A.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>${ic('flask')} ${t("nav_research")}</h2>
+        <span class="tag live">${isPl ? "Centrum Badań i Rozwoju (R&D)" : "R&D Tech Tree"}</span>
+      </div>
+      <p class="mut">${isPl ? "Opracowuj nowe technologie przemysłowe i logistyczne, aby uzyskać stałe korzyści dla całego przedsiębiorstwa." : "Invent innovative industrial and logistics patents to earn permanent corporate advantages."}</p>
+
+      <div class="grid g2" style="margin-top:16px">
+        ${branches.map(b => {
+          const lvl = levels[b] || 0;
+          const cost = costs[b] || 5000;
+          return `
+            <div class="card" style="margin-bottom:0">
+              <div class="row" style="justify-content:space-between;align-items:flex-start">
+                <div>
+                  <h3 style="margin:0">${esc(b)}</h3>
+                  <small class="mut">${descs[b] || ""}</small>
+                </div>
+                <span class="tag live">${isPl ? "Poziom" : "Tier"} ${lvl}</span>
+              </div>
+              <div class="prog-wrap" style="margin:12px 0 6px">
+                <div class="prog-bar" style="width:${Math.min(100, lvl * 20)}%"></div>
+              </div>
+              <div class="row" style="justify-content:space-between;align-items:center;margin-top:12px">
+                <span class="mut" style="font-size:13px">${isPl ? "Koszt ulepszenia:" : "Upgrade cost:"} <b style="color:var(--txt)">${cost.toLocaleString()} $</b></span>
+                <button class="btn sm" data-up-res="${esc(b)}">${isPl ? "Opracuj Patent" : "Research"}</button>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+
+  A.querySelectorAll("[data-up-res]").forEach(btn => {
+    btn.onclick = async () => {
+      try {
+        await api("/api/research/up", { method: "POST", body: JSON.stringify({ branch: btn.dataset.upRes }) });
+        toast(isPl ? `Rozwinięto technologię: ${btn.dataset.upRes}!` : `Upgraded: ${btn.dataset.upRes}!`, true);
+        vRes(A);
+      } catch (e) { toast(e.message, false); }
+    };
+  });
+}
+
 async function vInvest(A) {
   const isPl = LANG === "pl";
   const j = await api("/api/investments");
