@@ -44,6 +44,8 @@ ROLES = {
     "Manager": 500, "Researcher": 450, "Executive": 900
 }
 
+BRANCHES = ["Production", "Logistics", "Finance", "Automation", "AI", "Energy", "Research", "Marketing"]
+
 COMPANY_LOGOS = ["factory", "buildings", "bank", "coins", "chart", "trophy", "shield", "bolt"]
 
 # Sektory / Branże gospodarcze
