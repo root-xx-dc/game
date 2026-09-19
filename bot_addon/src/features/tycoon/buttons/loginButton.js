@@ -7,28 +7,28 @@ module.exports = {
   async execute(interaction) {
     const user = interaction.user;
 
-    // Generujemy kod i rejestrujemy w bezpieczny sposób
     const code = await generateAndRegisterCode(user.id, user.username, user.displayAvatarURL());
 
     const embed = new EmbedBuilder()
-      .setColor(0x5CB85C) // Sukces / Zieleń
-      .setTitle('🔑 Twój Prywatny Kod Logowania')
+      .setColor(0x5CB85C)
+      .setTitle('Your Private Access Code')
       .setDescription(
-        `Cześć **${user.username}**!\n\n` +
-        `Oto Twój prywatny, jednorazowy kod logowania do gry:\n\n` +
+        `Hello **${user.username}**!\n\n` +
+        `Here is your private, one-time login code for NEON MAGNAT:\n\n` +
         `# \`${code}\`\n\n` +
-        `📋 **Co teraz zrobić:**\n` +
-        `1. Przejdź na stronę gry: **http://100.111.112.57:7777/**\n` +
-        `2. W zakładce **„Kod z Discorda”** wklej kod: \`${code}\`\n` +
-        `3. Kliknij **„Zaloguj kodem Discord”** i wejdź do świata gry!\n\n` +
-        `🔒 *Ten kod jest widoczny TYLKO dla Ciebie. Traci ważność za 15 minut.*`
+        `How to join:\n` +
+        `1. Open the game in your browser: **http://100.111.112.57:7777/**\n` +
+        `2. On the main page, keep the default "Discord Code" tab selected.\n` +
+        `3. Enter your code \`${code}\` and click "Enter Game with Code".\n\n` +
+        `*This code is visible ONLY to you. It is single-use and expires in 15 minutes.*`
       )
-      .setFooter({ text: 'NEON MAGNAT - Bezpieczna Autoryzacja Discord' })
+      .setFooter({ text: 'NEON MAGNAT - Secure Discord Access' })
       .setTimestamp();
 
     await interaction.reply({
       embeds: [embed],
-      ephemeral: true // Kluczowe: wiadomość widoczna wyłącznie dla klikającego gracza!
+      ephemeral: true
     });
   },
 };
+

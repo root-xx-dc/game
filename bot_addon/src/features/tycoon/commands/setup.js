@@ -3,54 +3,54 @@ const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder,
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('tycoon-channel')
-    .setDescription('Przypisz dedykowany kanał logowania do gry NEON MAGNAT z przyciskiem dla graczy')
+    .setDescription('Assign the dedicated NEON MAGNAT game login channel with access button')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addChannelOption(option =>
-      option.setName('kanal')
-        .setDescription('Wybierz kanał tekstowy, na którym pojawi się panel logowania')
+      option.setName('channel')
+        .setDescription('Select the text channel where the login panel should appear')
         .addChannelTypes(ChannelType.GuildText)
         .setRequired(true)
     ),
 
   async execute(interaction) {
-    const targetChannel = interaction.options.getChannel('kanal');
+    const targetChannel = interaction.options.getChannel('channel');
 
     const embed = new EmbedBuilder()
-      .setColor(0xD49547) // Motyw Ciemny Dąb / Neon Magnat Gold
-      .setTitle('🏭 NEON MAGNAT - Portal Logowania do Gry')
+      .setColor(0xD49547)
+      .setTitle('NEON MAGNAT - Access Portal')
       .setDescription(
-        'Witaj w oficjalnym punkcie dostępowym do świata **NEON MAGNAT**!\n\n' +
-        'Aby połączyć swoje konto Discord z grą i otrzymać **jednorazowy, bezpieczny kod dostępu**:\n\n' +
-        '👉 Kliknij poniższy przycisk **„Zaloguj do Gry”**.\n\n' +
-        '🔒 *Twój kod zostanie wyświetlony w prywatnej wiadomości widocznej wyłącznie dla Ciebie. Nikt inny na kanale go nie zobaczy.*'
+        'Welcome to the official access gateway for **NEON MAGNAT**.\n\n' +
+        'A persistent single-world economy featuring 10 European trading hubs, freight logistics, 5 industrial sectors, and RootX Corporation stock equity.\n\n' +
+        'Click the button below to generate your private, one-time access code.\n\n' +
+        '*Your code will appear in an ephemeral response visible only to you.*'
       )
       .addFields(
-        { name: '🌐 Adres Serwera Gry', value: process.env.TYCOON_WEB_URL || 'Dostępny w ogłoszeniach serwera', inline: true },
-        { name: '⏳ Ważność Kodu', value: '15 minut (jednorazowy)', inline: true }
+        { name: 'Server Address', value: process.env.TYCOON_WEB_URL || 'http://100.111.112.57:7777/', inline: true },
+        { name: 'Code Validity', value: '15 minutes (single-use)', inline: true }
       )
-      .setFooter({ text: 'NEON MAGNAT - Ekonomiczna Strategia Przemysłowa' })
+      .setFooter({ text: 'NEON MAGNAT - Single Shared Economy Tycoon' })
       .setTimestamp();
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('btn_tycoon_login')
-        .setLabel('Zaloguj do Gry NEON MAGNAT')
-        .setStyle(ButtonStyle.Primary)
-        .setEmoji('🎮')
+        .setLabel('Login to NEON MAGNAT')
+        .setStyle(ButtonStyle.Success)
     );
 
     try {
       await targetChannel.send({ embeds: [embed], components: [row] });
       await interaction.reply({
-        content: `✅ Pomyślnie wysłano panel logowania na kanał ${targetChannel}!`,
+        content: `Login panel successfully posted to ${targetChannel}!`,
         ephemeral: true
       });
     } catch (err) {
-      console.error('[Tycoon] Błąd wysyłania na kanał:', err);
+      console.error('[Tycoon] Error sending panel to channel:', err);
       await interaction.reply({
-        content: `❌ Wystąpił błąd podczas wysyłania panelu na kanał: ${err.message}`,
+        content: `Error sending panel to channel: ${err.message}`,
         ephemeral: true
       });
     }
   },
 };
+
